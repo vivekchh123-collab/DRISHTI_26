@@ -191,7 +191,9 @@ def deforestation(code: str,
     except KeyError:
         raise HTTPException(404, "unknown district %r" % code)
     b = scenario.base(code)
-    state = deforestation_mod.build(b.terrain, b.exposure)
+    real_canopy = deforestation_mod.load_worldcover_canopy(code, b.grid)
+    state = deforestation_mod.build(b.terrain, b.exposure,
+                                    canopy_raster=real_canopy)
     imp = deforestation_mod.impact(
         b.grid, b.terrain, b.exposure, d.urban_fraction, d.cropland_fraction,
         loss_fraction=clearance, years_since_loss=years_since)

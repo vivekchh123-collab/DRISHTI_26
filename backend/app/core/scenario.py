@@ -89,7 +89,8 @@ def base(code: str) -> DistrictBase:
         population_total=d.population_2025,
         urban_fraction=d.urban_fraction,
         cropland_fraction=d.cropland_fraction,
-        hq_lat=d.hq_lat, hq_lon=d.hq_lon, hq_name=d.hq_name)
+        hq_lat=d.hq_lat, hq_lon=d.hq_lon, hq_name=d.hq_name,
+        district_code=d.code)
 
     built = DistrictBase(district=d, grid=grid, terrain=terrain,
                          boundary=bnd, exposure=exp)
@@ -124,36 +125,60 @@ class Scenario:
     def provenance(self) -> dict:
         """Where every layer came from. Rendered as a badge on every screen.
 
-        Demo mode is stated plainly rather than implied. The algorithms are real
-        and cited either way; the inputs are what changes, and a consumer of this
-        API is entitled to know which.
+        Nothing here is a single blanket statement any more. Elevation,
+        boundaries, population, built-up land, cropland, roads and facilities
+        each carry their own source for *this specific district*, because a
+        district with GHS-POP baked but no OSM bake is genuinely real on one
+        layer and modelled on another - collapsing that into one sentence would
+        misstate whichever one happens to be true here.
         """
+        exp_prov = dict(self.exposure.layer_provenance or {})
+        # A layer with no entry means build_exposure() ran without a
+        # district_code, which should not happen via the normal API path, but
+        # the fallback keeps a caller from crashing on a missing key rather
+        # than silently mislabelling the layer as real.
+        for layer in ("population", "built_up", "cropland", "roads", "facilities"):
+            exp_prov.setdefault(layer, "modelled (no district-specific bake)")
+
+        modelled_layers = [k for k, v in exp_prov.items()
+                          if "observed" not in v and "OpenStreetMap" not in v]
+        real_layers = [k for k in exp_prov if k not in modelled_layers]
+
+        base = {
+            "dem_source": self.terrain.dem_source,
+            "boundary_source": self.boundary.source,
+            "population_source": exp_prov["population"],
+            "built_up_source": exp_prov["built_up"],
+            "cropland_source": exp_prov["cropland"],
+            "roads_source": exp_prov["roads"],
+            "facilities_source": exp_prov["facilities"],
+            "population_reconciliation": self.exposure.population_reconciliation,
+            "still_modelled": modelled_layers,
+            "generated_at": self.generated_at,
+        }
+        note = ("Real, observed layers for this district: %s. Modelled, and "
+                "labelled as such: %s."
+                % (", ".join(real_layers) or "none",
+                   ", ".join(modelled_layers) or "none"))
+
         if self.live:
             return {
                 "data_mode": "live",
                 "confidence": "observed-and-forecast rainfall",
-                "dem_source": self.terrain.dem_source,
-                "boundary_source": self.boundary.source,
                 "rainfall_source": self.live_source,
-                "population_source": "Census 2011 projected to 2025, dasymetric",
-                "note": ("Rainfall and antecedent soil wetness are real "
-                         "observed and forecast values. Elevation, population "
-                         "and boundaries remain modelled, so this is a live "
-                         "event on modelled terrain \u2014 not a fully "
-                         "observed assessment."),
-                "generated_at": self.generated_at,
+                "note": note + (" Rainfall and antecedent soil wetness are also "
+                                "real, observed and forecast, on top of the "
+                                "district layers above."),
+                **base,
             }
         return {
             "data_mode": "demo",
-            "confidence": "modelled",
-            "dem_source": self.terrain.dem_source,
-            "boundary_source": self.boundary.source,
+            "confidence": "modelled rainfall, real exposure where baked",
             "rainfall_source": "synthetic design storm (IMD normals + Gumbel DDF)",
-            "population_source": "Census 2011 projected to 2025, dasymetric",
-            "note": ("Algorithms are published and cited; input rasters are "
-                     "modelled, not observed. Add ?live=true for an assessment "
-                     "driven by real observed and forecast rainfall."),
-            "generated_at": self.generated_at,
+            "note": note + (" Rainfall here is a synthetic design storm; add "
+                            "?live=true for real observed and forecast rainfall "
+                            "on top of the same district layers."),
+            **base,
         }
 
     generated_at: str = ""
@@ -368,18 +393,34 @@ class DistrictAssessment:
 
     @property
     def provenance(self) -> dict:
+        exp_prov = dict(self.exposure.layer_provenance or {})
+        for layer in ("population", "built_up", "cropland", "roads", "facilities"):
+            exp_prov.setdefault(layer, "modelled (no district-specific bake)")
+        modelled_layers = [k for k, v in exp_prov.items()
+                          if "observed" not in v and "OpenStreetMap" not in v]
+        real_layers = [k for k in exp_prov if k not in modelled_layers]
+
         return {
             "data_mode": "demo",
-            "confidence": "modelled",
+            "confidence": "modelled rainfall (recurrence, not one event); "
+                          "real exposure where baked",
             "dem_source": self.terrain.dem_source,
             "boundary_source": self.boundary.source,
             "geology_source": ("not supplied — lithology and structure held at a "
                                "neutral LHEF rating"
                                if not self.landslide.complete else "supplied"),
-            "population_source": "Census 2011 projected to 2025, dasymetric",
-            "note": ("Algorithms are published and cited; input rasters are "
-                     "modelled, not observed. Red zones are a recurrence "
-                     "assessment across modelled 5-, 25- and 100-year events."),
+            "population_source": exp_prov["population"],
+            "built_up_source": exp_prov["built_up"],
+            "cropland_source": exp_prov["cropland"],
+            "roads_source": exp_prov["roads"],
+            "facilities_source": exp_prov["facilities"],
+            "population_reconciliation": self.exposure.population_reconciliation,
+            "note": ("Algorithms are published and cited. Red zones are a "
+                     "recurrence assessment across modelled 5-, 25- and "
+                     "100-year rainfall events, on exposure layers that are "
+                     "real where baked: %s. Modelled, and labelled: %s."
+                     % (", ".join(real_layers) or "none",
+                        ", ".join(modelled_layers) or "none")),
             "generated_at": self.generated_at,
         }
 

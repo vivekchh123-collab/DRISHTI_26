@@ -376,10 +376,21 @@ def assess_habitations(grid: Grid, exposure: Exposure, red: RedZones,
                     break
             earliest = float(np.min(red.return_period[red_sel]))
             if not np.isfinite(rp):
-                # Exposure never reaches the material threshold: the hazard is
-                # real but peripheral. Report it one horizon later than the
-                # earliest affected cell would suggest, rather than ignoring it.
-                rp = earliest * 4.0
+                if pop_red > 0:
+                    # Some people are exposed, just below the material
+                    # threshold: the hazard is real but peripheral. Report it
+                    # one horizon later than the earliest affected cell would
+                    # suggest, rather than ignoring it.
+                    rp = earliest * 4.0
+                # pop_red == 0: a red cell overlaps this settlement's
+                # footprint but genuinely nobody lives there - an empty field
+                # at the edge of a village boundary, say. That must stay
+                # "monitor" (rp = inf) rather than acquiring a relocation
+                # horizon for a hazard with zero population behind it. This
+                # was reachable with modelled built-up, where population always
+                # tracked build-up smoothly and pop_red was never zero once a
+                # red cell was in reach; real GHS-POP is patchier and breaks
+                # that assumption.
             unsuit = float(np.max(red.unsuitability[red_sel]))
             doms = red.dominant[red_sel]
             doms = doms[doms >= 0]

@@ -159,10 +159,14 @@ def load(grid: Grid, code: str, centre_lat: float, centre_lon: float,
     file format is plain GeoJSON so any published district layer can be dropped
     in without a converter.
     """
+    # backend/app/data/boundaries/ already holds the national geoBoundaries
+    # bake (india_districts.json) and is already in the installer's bundled
+    # data directories - this file lives beside it rather than at a separate
+    # path, so both ship together with no extra bundling step.
     path = path or os.environ.get(
         "DRISHTI_BOUNDARIES",
-        os.path.join(os.path.dirname(__file__), "..", "..", "..",
-                     "data", "boundaries", "districts.geojson"))
+        os.path.join(os.path.dirname(__file__), "..", "data",
+                     "boundaries", "districts.geojson"))
     try:
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as fh:

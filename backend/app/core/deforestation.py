@@ -22,9 +22,13 @@ around 70, degraded scrub around 80, bare ground around 86. Catchment
 experiments consistently show water yield rising after forest removal
 (Bosch & Hewlett, 1982).
 
-Forest cover is modelled from terrain by default. Real cover and loss rasters —
-Forest Survey of India, Hansen/GFW tree-cover loss, or an NDVI composite — load
-through :func:`load_forest_raster` and replace the model entirely.
+Forest cover prefers **ESA WorldCover's observed tree-cover class** when it has
+been baked for a district (``scripts/fetch_worldcover.py``), and falls back to
+the terrain model otherwise. A full canopy-loss trajectory — Forest Survey of
+India, Hansen/GFW tree-cover loss, or an NDVI time series — still loads through
+:func:`load_forest_raster` and replaces the baseline entirely when supplied;
+WorldCover only improves what the model falls back to when nothing more
+specific is available.
 
 The headline output is a counterfactual: run the hazard assessment with the
 forest, run it without, and report the difference in red-zone area. That turns
@@ -34,6 +38,7 @@ uninhabitable land and M people to the relocation list".
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
@@ -110,6 +115,29 @@ def model_canopy(terrain: Terrain, exposure: Exposure) -> np.ndarray:
     canopy = (0.45 * steep + 0.20 * high + 0.15 * wet) * away * not_farmed
     canopy = np.where(terrain.sea_mask | terrain.streams, 0.0, canopy)
     return np.clip(smooth(canopy, radius=2) * 1.6, 0, 1).astype(np.float32)
+
+
+def load_worldcover_canopy(code: str, grid: Grid) -> Optional[np.ndarray]:
+    """Observed tree-cover fraction from the baked ESA WorldCover bake, or None.
+
+    A real land-cover class beats a terrain-suitability model of where forest
+    "should" be, but it is not a loss trajectory - it is one snapshot (2021),
+    so it becomes the *baseline* :func:`build` starts from, not a substitute
+    for :func:`load_forest_raster`'s canopy-loss inputs when those exist.
+    """
+    worldcover_dir = os.environ.get("DRISHTI_WORLDCOVER") or os.path.join(
+        os.path.dirname(__file__), "..", "data", "worldcover")
+    path = os.path.join(worldcover_dir, "%s.npz" % code)
+    if not os.path.exists(path):
+        return None
+    try:
+        with np.load(path, allow_pickle=False) as z:
+            arr = z["tree_cover"].astype(np.float32)
+    except Exception:
+        return None
+    if arr.shape != (grid.n, grid.n):
+        return None
+    return arr
 
 
 def load_forest_raster(path: str, grid: Grid) -> Optional[np.ndarray]:

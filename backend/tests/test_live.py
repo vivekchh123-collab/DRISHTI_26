@@ -233,8 +233,15 @@ def test_live_scenario_builds_and_is_labelled_live(monkeypatch):
     assert sc.live is True
     prov = sc.provenance
     assert prov["data_mode"] == "live"
-    # It must not overclaim: terrain and population are still modelled.
-    assert "modelled terrain" in prov["note"]
+    # It must not overclaim. BR-DAR carries every real exposure bake tonight
+    # added - population, built-up, cropland, roads, facilities - so nothing
+    # should be left in still_modelled, and every "_source" field naming an
+    # observed dataset must actually say so rather than being silently absent
+    # from the list.
+    assert prov["still_modelled"] == []
+    for layer in ("population", "built_up", "cropland", "roads", "facilities"):
+        assert "observed" in prov["%s_source" % layer] or                "OpenStreetMap" in prov["%s_source" % layer]
+    assert "Copernicus" in prov["dem_source"]
 
 
 def test_live_scenario_produces_a_real_flood(monkeypatch):
