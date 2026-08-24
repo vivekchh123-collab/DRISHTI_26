@@ -107,7 +107,7 @@ def build_server(clean: bool = True) -> str:
     #
     # Destinations mirror the source tree because every loader resolves its path
     # relative to its own module: app/core/terrain.py looks for ../data/dem.
-    for sub in ("dem", "ghsl", "tracks", "boundaries", "climatology", "boards"):
+    for sub in ("dem", "ghsl", "tracks", "boundaries", "climatology", "boards", "pop", "worldcover", "osm"):
         src = os.path.join(BACKEND, "app", "data", sub)
         if os.path.isdir(src):
             cmd += ["--add-data", "%s%s%s" % (src, sep,
@@ -131,13 +131,13 @@ def build_server(clean: bool = True) -> str:
     # less - synthetic terrain, no history, no cloud baseline. Checking the
     # files is cheaper and more direct than inferring it from a response later.
     internal = os.path.join(out, "_internal")
-    for sub in ("dem", "ghsl", "tracks", "boundaries", "climatology", "boards"):
+    for sub in ("dem", "ghsl", "tracks", "boundaries", "climatology", "boards", "pop", "worldcover", "osm"):
         here = os.path.join(internal, "app", "data", sub)
         if not (os.path.isdir(here) and os.listdir(here)):
             raise SystemExit(
                 "frozen build is missing app/data/%s. The binary would run and "
                 "silently serve a degraded application." % sub)
-    print("  baked data present: dem, ghsl, tracks, boundaries, climatology, boards")
+    print("  baked data present: dem, ghsl, tracks, boundaries, climatology, boards, pop, worldcover, osm")
     size = sum(os.path.getsize(os.path.join(dp, f))
                for dp, _, fs in os.walk(out) for f in fs) / 1e6
     print("\n  backend frozen: %s  (%.0f MB)" % (exe, size))
