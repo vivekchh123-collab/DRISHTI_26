@@ -11,7 +11,8 @@ import * as P from "./panels.js";
 import { HistoryLayer, renderHistoryPanel, renderEventDetail, renderTrackDetail,
         renderHistoricalContext, isPointTestable }
   from "./history.js";
-import { StoryScrubber, renderStoryPanel, phaseAt } from "./story.js";
+import { StoryScrubber, phaseAt } from "./story.js";
+import { renderStoryPanel } from "./story_panel.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -492,15 +493,17 @@ async function loadStory() {
   timeline.clear();
 
   try {
-    const [rz, habs, layers, board, strike, assess, series] = await Promise.all([
-      api.redzones(STORY_CODE),
-      api.habitations(STORY_CODE),
-      api.assessmentLayers(STORY_CODE),
-      api.watch(STORY_DATE),
-      api.explainCell(STORY_CODE, STORY_LAT, STORY_LON),
-      api.assessment(STORY_CODE, state.severity),
-      api.timeline(STORY_CODE, state.severity),
-    ]);
+    const [rz, habs, layers, board, strike, assess, series, reloc] =
+      await Promise.all([
+        api.redzones(STORY_CODE),
+        api.habitations(STORY_CODE),
+        api.assessmentLayers(STORY_CODE),
+        api.watch(STORY_DATE),
+        api.explainCell(STORY_CODE, STORY_LAT, STORY_LON),
+        api.assessment(STORY_CODE, state.severity),
+        api.timeline(STORY_CODE, state.severity),
+        api.relocation(STORY_CODE),
+      ]);
 
     state.storyData = {
       redzone: rz,
@@ -508,6 +511,8 @@ async function loadStory() {
       strike,
       flood: series,
       cards: assess.action_cards || [],
+      plans: reloc.plans || [],
+      sites: reloc.sites || [],
     };
     setProvenance(rz.provenance);
 

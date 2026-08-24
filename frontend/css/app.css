@@ -715,34 +715,43 @@ table.tbl td.r { text-align: right; font-variant-numeric: tabular-nums;
 
 /* --- the demonstration scrubber ------------------------------------------ */
 
-/* Taller than the flood slider because it carries event labels above the
-   track. The labels are what make it a story rather than a ruler. */
-.story-bar { padding-top: 30px; }
+/* Tall enough for two staggered rows of event labels. Six markers on a
+   168-hour axis put "Soil saturated" and "LANDSLIDE" six hours apart, which at
+   any sane width overlap — so odd-numbered markers sit on a second row rather
+   than being truncated or dropped. */
+.story-bar { padding-top: 46px; }
 
 .story-track { position: relative; }
 
-/* Markers sit above the track, absolutely positioned by their hour so a label
-   always points at the moment it names. */
-.story-marks { position: absolute; left: 0; right: 0; top: -24px; height: 24px; }
+.story-marks { position: absolute; left: 0; right: 0; top: -42px; height: 42px; }
 .story-mark {
-  position: absolute; transform: translateX(-50%);
+  position: absolute; bottom: 0;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   background: none; border: 0; padding: 0; cursor: pointer;
   color: var(--text-3); white-space: nowrap;
+  /* Anchored on the dot, not the label: the dot is what points at the hour, so
+     it is the dot that must sit exactly on its position. */
+  transform: translateX(-50%);
 }
+.story-mark[data-row="1"] { bottom: 21px; }
+
 .story-mark-dot {
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--surface-3); border: 1px solid var(--line);
   transition: background var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
+/* The second row needs a leader down to the track or its dot reads as floating
+   free of the axis it belongs to. */
+.story-mark[data-row="1"]::after {
+  content: ""; position: absolute; left: 50%; bottom: -21px;
+  width: 1px; height: 21px; background: var(--line);
+}
 .story-mark-label {
   font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em;
-  text-transform: uppercase;
+  text-transform: uppercase; line-height: 1;
 }
 .story-mark:hover { color: var(--text); }
 
-/* A passed marker fills in; the current one is called out. Together they read
-   as progress through the event rather than six equal buttons. */
 .story-mark.passed[data-tone="watch"]  .story-mark-dot { background: var(--watch);  border-color: var(--watch); }
 .story-mark.passed[data-tone="alert"]  .story-mark-dot { background: var(--alert);  border-color: var(--alert); }
 .story-mark.passed[data-tone="severe"] .story-mark-dot { background: var(--severe); border-color: var(--severe); }
@@ -780,3 +789,38 @@ table.tbl td.r { text-align: right; font-variant-numeric: tabular-nums;
 .story-metric-v small { font-size: 12px; font-weight: 500; color: var(--text-3); }
 .story-metric-n { font-size: var(--t-xs); color: var(--text-2); margin-top: 2px; }
 .story-metric[data-tone="severe"] .story-metric-v { color: var(--severe); }
+
+/* --- parameter tables: measurement beside its basis ---------------------- */
+
+/* Three columns: what was measured, the value, and the published figure it is
+   judged against. The third column is the reason this screen exists — a number
+   with no stated basis is an assertion. */
+.param-tbl td { vertical-align: top; padding: 4px 0; }
+.param-tbl td:first-child { color: var(--text-2); padding-right: var(--s3); }
+.param-tbl td.r { white-space: nowrap; padding-right: var(--s3); font-weight: 600; }
+.param-tbl td.r small { font-weight: 400; color: var(--text-3); font-size: 9px; }
+.param-tbl td.src {
+  font-size: 10px; line-height: 1.4; color: var(--text-3);
+  width: 45%;
+}
+/* A row whose threshold has actually been crossed. This is the line a
+   presenter points at when asked "so what told you". */
+.param-tbl tr.crossed td.r { color: var(--severe); }
+.param-tbl tr.crossed td:first-child { color: var(--text); font-weight: 600; }
+
+.src-note {
+  margin: 8px 0 0; font-size: 10px; line-height: 1.5; color: var(--text-3);
+}
+
+/* --- relocation destination --------------------------------------------- */
+
+.reloc-site {
+  margin-top: var(--s3); padding: var(--s3);
+  background: var(--surface-2); border-radius: var(--radius);
+  border-left: 2px solid var(--ok);
+}
+.reloc-site-hd {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: var(--s3); font-size: var(--t-sm); font-weight: 600;
+  margin-bottom: 6px;
+}
