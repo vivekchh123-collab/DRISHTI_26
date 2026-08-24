@@ -10,7 +10,7 @@ python scripts/bench.py --district BR-DAR
 cd backend && python -m pytest -q
 ```
 
-Both take under a minute and both give you numbers to quote (308 tests passing,
+Both take under a minute and both give you numbers to quote (313 tests passing,
 median 1.5 s per district). Leave the app already running at
 `http://127.0.0.1:8000` on the **Now** board — never open a laptop in front of
 judges and wait for a server to boot.
@@ -287,6 +287,15 @@ has the interactive HAND demonstration in it.
 > came from Copernicus just now. What is still modelled is the **backscatter
 > imagery itself** — downloading and processing a granule is the one thing that
 > needs credentials rather than code.
+
+**"Prove it's live, don't just tell me."**
+> Two ways, both live, both take under thirty seconds. On **Now**, press
+> **Refresh live** — it bypasses every cache, top to bottom, and rebuilds the
+> board against Open-Meteo right now. Watch the timestamp reset. Or on
+> **District → Inundation & relief**, flip the **Live rainfall** toggle — the
+> whole screen rebuilds on real observed rainfall: the map, the ranked zones,
+> the action cards, the time slider, all together, because they now share one
+> rule about what "live" means rather than five different guesses.
 
 **"Bhuvan already does this."**
 > Bhuvan gives an analyst a flood extent raster. We give a District Magistrate a

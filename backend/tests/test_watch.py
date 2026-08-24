@@ -314,3 +314,44 @@ def test_wayanad_is_on_the_board_the_morning_it_happened():
         "Wayanad read as %s on the morning of the landslide" % way["action"])
     assert way["cloud"]["column"]["levels_filled"] == 3
     assert way["cloud"]["anomaly"]["points_above_normal"] > 20
+
+
+# ------------------------------------------------------- force refresh
+
+def test_force_bypasses_the_cache(monkeypatch):
+    """A demonstration's "watch me refresh this live" moment must be real.
+
+    A force-refresh that quietly served the same cached object would be a
+    trick, not a demonstration - the button would look like it did something
+    while actually doing nothing. This asserts the underlying build actually
+    runs again rather than being skipped.
+    """
+    monkeypatch.setattr(watch, "_CACHE", {})
+    calls = {"n": 0}
+    real_build = watch.build
+
+    def counting_build(*a, **k):
+        calls["n"] += 1
+        return real_build(*a, **k)
+
+    monkeypatch.setattr(watch, "build", counting_build)
+
+    watch.get(with_river=False)
+    assert calls["n"] == 1, "first call should build"
+    watch.get(with_river=False)
+    assert calls["n"] == 1, "second ordinary call should hit the cache"
+    watch.get(with_river=False, force=True)
+    assert calls["n"] == 2, "force=True must trigger a genuine rebuild"
+    watch.get(with_river=False)
+    assert calls["n"] == 2, "the forced result should itself be cached"
+
+
+def test_force_is_a_no_op_on_a_replay():
+    """A replayed day cannot change, so there is nothing force should re-read."""
+    board = watch.baked("2024-07-30")
+    if board is None:
+        pytest.skip("boards not baked")
+    # Replays are served straight from the baked file at the API layer and
+    # never reach watch.get(); this only guards that get() itself does not
+    # crash or misbehave if ever called with both a date and force=True.
+    watch.get(with_river=False, date="2024-07-30", force=True)

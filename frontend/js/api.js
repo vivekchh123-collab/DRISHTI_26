@@ -37,17 +37,35 @@ async function get(url, { useCache = true } = {}) {
 
 const q = (severity) => `?severity=${encodeURIComponent(severity)}`;
 
+// Every endpoint the district screen touches has to agree on whether it is
+// describing the demo event or the live one — a map on the synthetic storm
+// next to a ranked-zone list claiming to be live would be a worse failure
+// than either being wrong alone, because it reads as two different answers to
+// the same question. This is the one place that query string is built.
+const qLive = (sev, live) =>
+  `?severity=${encodeURIComponent(sev)}${live ? "&live=true" : ""}`;
+
 export const api = {
   districts:    (sev)       => get(`/api/districts${q(sev)}`),
-  district:     (code, sev) => get(`/api/districts/${code}${q(sev)}`),
-  assessment:   (code, sev) => get(`/api/districts/${code}/assessment${q(sev)}`),
-  timeline:     (code, sev) => get(`/api/districts/${code}/timeline${q(sev)}`),
+  district:     (code, sev, live) => get(`/api/districts/${code}${qLive(sev, live)}`,
+                                         { useCache: !live }),
+  assessment:   (code, sev, live) => get(`/api/districts/${code}/assessment${qLive(sev, live)}`,
+                                         { useCache: !live }),
+  timeline:     (code, sev, live) => get(`/api/districts/${code}/timeline${qLive(sev, live)}`,
+                                         { useCache: !live }),
   waterlogging: (code, sev) => get(`/api/districts/${code}/waterlogging${q(sev)}`),
-  layers:       (code, sev) => get(`/api/districts/${code}/layers${q(sev)}`),
+  layers:       (code, sev, live) => get(`/api/districts/${code}/layers${qLive(sev, live)}`,
+                                         { useCache: !live }),
   methods:      ()          => get(`/api/methods`),
   national:     (size=0.75) => get(`/api/national?size_deg=${size}`),
   nationalDistricts: () => get(`/api/national/districts`),
-  watch:        (date) => get(`/api/watch${date ? `?date=${date}` : ""}`),
+  watch:        (date, force = false) => {
+    const params = [];
+    if (date) params.push(`date=${date}`);
+    if (force) params.push(`force=true&_=${Date.now()}`);   // real re-read, never a cache hit
+    const url = `/api/watch${params.length ? `?${params.join("&")}` : ""}`;
+    return get(url, { useCache: !force });
+  },
   liveDistrict: (code)      => get(`/api/live/${code}`),
   ml:           ()          => get(`/api/ml`),
   deforestation:(code, c=0.3) => get(`/api/districts/${code}/deforestation?clearance=${c}`),
@@ -80,9 +98,10 @@ export const api = {
     return `/api/districts/${code}/assessment-layers/${name}.png`;
   },
 
-  layerUrl(code, name, sev, hour) {
+  layerUrl(code, name, sev, hour, live) {
     const p = new URLSearchParams({ severity: sev });
     if (hour != null) p.set("hour", String(hour));
+    if (live) p.set("live", "true");
     return `/api/districts/${code}/layers/${name}.png?${p}`;
   },
 };

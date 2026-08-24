@@ -1,9 +1,58 @@
 # Demo runbook — proving it is live, not just saying it
 
-Six proof moves, in order. Each one takes under a minute and each one shows
-something rather than claims it.
+Six proof moves, in order. The first two are **interactive** — the
+presenter clicks something and the interface visibly changes in front of the
+panel, live. Nothing about them is a canned animation; both hit the real
+backend and wait for a real answer.
 
-## 1. There is not one API key in this codebase
+## 1. Press "Refresh live" and watch the timestamp move
+
+Open **Now**. The board is already alive without touching anything — a
+pulsing dot beside "LIVE", and a "read Xs ago" clock genuinely ticking up
+once a second. That much proves the page is not frozen.
+
+Then press **Refresh live**, top-right of the board. It disables itself,
+shows a spinner and "Reading live weather…" for a few seconds — this is a
+**real re-read**, not a cached response redressed: it bypasses both the
+browser cache and the server's 15-minute cache
+(`?force=true`, verified by `test_force_bypasses_the_cache`). When it
+returns, the timestamp jumps to *just now* and every card sweeps with a
+soft highlight — proof the numbers actually moved, not just that a spinner
+finished.
+
+> *"I'm not going to tell you this is live. I'm going to press this button,
+> right now, and you watch the clock reset."*
+
+The board also refreshes itself quietly every four minutes on its own — if
+one of those catches mid-sentence, that is a bonus, not a glitch.
+
+## 2. Flip a district from demo rain to real rain — the whole screen changes
+
+Go to **District → Inundation & relief**. The **Live rainfall** toggle sits
+next to the severity selector, off by default. Click it.
+
+For a few seconds it reads "Reading live rain…" — a full live scenario is
+being built: real Open-Meteo rainfall run through the same SCS-CN → HAND →
+Manning physics as every other assessment. When it lands, **everything on
+the screen changes together**: the flood-depth layer on the map, the ranked
+red zones, the action cards, the time slider, and the provenance badge, which
+now reads the real `rainfall_source`. Population, built-up land, cropland,
+roads and facilities were already real either way — the toggle only changes
+which rainfall drives the physics, and it changes it everywhere at once.
+
+That consistency is the point, and it took a real fix to get: before tonight
+only the ranked-zone panel understood `live=true` — the map would have kept
+showing the synthetic storm while the list beside it claimed to be live, a
+worse failure than either being wrong alone. Every endpoint the screen calls
+now shares one fallback rule
+(`test_live_fallback_is_consistent_across_every_district_endpoint`), so a
+judge comparing the map to the numbers sees one answer, not two.
+
+If the live feed is genuinely unreachable, the toggle turns amber, not green,
+and says so — *"Live feed unreachable — showing the design storm instead"* —
+rather than quietly serving synthetic data under a live badge.
+
+## 3. There is not one API key in this codebase
 
 ```bash
 grep -ri "api_key\|apikey\|api key" backend/app -r
@@ -13,24 +62,11 @@ Every hit is a comment reading *"no API key required"* — never a credential.
 Say it plainly: *"Every data source behind this application is open. Nobody
 had to register for anything."*
 
-## 2. The timestamp is minutes old
-
-Open **Now**. `generated_at` and `build_seconds` on the board are real —
-point at the clock, point at the reading.
-
-## 3. Match it against the source, live, in a second tab
+## 4. Match it against the source, live, in a second tab
 
 Pick any district centroid and open Open-Meteo's own forecast URL for that
 coordinate. The rainfall figure on the card matches, because it came from
 there a few minutes ago.
-
-## 4. Flip a district from demo to live
-
-`?live=true` on a district assessment changes `rainfall_source` from
-*"synthetic design storm (IMD normals + Gumbel DDF)"* to the real Open-Meteo
-forecast, and the provenance badge changes with it. Population, built-up
-land, cropland, roads and facilities are **already real regardless** — the
-toggle only changes which rainfall drives the physics.
 
 ## 5. Sentinel-1 catalogue query is live
 
@@ -85,7 +121,7 @@ stronger answers than pretending nothing was tried:
 
 ## Numbers worth having ready
 
-- **309 tests passing**, 5 skipped.
+- **313 tests passing**, 5 skipped.
 - **22 districts** with full physics; **735** addressed nationally at a
   weather-screening tier, clearly separated on screen.
 - Population reconciliation ratio (observed ÷ Census projection) across the

@@ -565,12 +565,22 @@ def baked_dates() -> List[dict]:
         return []
 
 
-def get(with_river: bool = True, date: Optional[str] = None) -> WatchBoard:
+def get(with_river: bool = True, date: Optional[str] = None,
+       force: bool = False) -> WatchBoard:
+    """Cached board, unless ``force`` asks for a genuine live re-read.
+
+    ``force`` exists for the one moment a demonstration actually needs it: a
+    presenter pressing refresh in front of a panel and getting real new
+    numbers, not a cache hit dressed up with a spinner. It still writes the
+    result back to the cache, so the next ordinary caller benefits from the
+    forced read rather than triggering yet another one.
+    """
     key = date or "live"
     with _LOCK:
         hit = _CACHE.get(key)
-    # A replayed day cannot change, so it never goes stale.
-    if hit and (date or (time.time() - hit[0]) < CACHE_TTL):
+    # A replayed day cannot change, so it never goes stale - force is a no-op
+    # for a replay, because there is nothing to re-read.
+    if hit and (date or (not force and (time.time() - hit[0]) < CACHE_TTL)):
         return hit[1]
     built = build(with_river, date)
     if built.live:

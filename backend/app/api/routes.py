@@ -12,7 +12,7 @@ boundaries, zones and facilities.
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import numpy as np
 from fastapi import APIRouter, HTTPException, Query, Response
@@ -81,6 +81,31 @@ def _scenario(code: str, severity: str) -> scenario.Scenario:
     return scenario.get(code, _severity(severity))
 
 
+def _scenario_maybe_live(code: str, severity: str, live: bool
+                         ) -> Tuple[scenario.Scenario, bool]:
+    """The demo scenario, or the real one, on the same footing every route uses.
+
+    Every endpoint the district screen calls - detail, assessment, timeline,
+    the layer index, the layer images - has to agree on which scenario it is
+    describing. Before this existed, only ``/assessment`` understood
+    ``live=true``: the map and the time slider stayed on the synthetic event
+    while the ranked-zone list claimed to be live, which is a worse failure
+    than either being wrong on its own, because it looks like two different
+    answers to the same question. Every caller now shares this one fallback
+    rule instead of five copies of it.
+
+    Returns ``(scenario, fell_back)`` - ``fell_back`` is True when live was
+    requested but the feed could not be reached, so the caller can report that
+    honestly rather than silently serving the design storm labelled live.
+    """
+    if live:
+        sc = scenario.get_live(code)
+        if sc is not None:
+            return sc, False
+        return _scenario(code, severity), True
+    return _scenario(code, severity), False
+
+
 # ---------------------------------------------------------------------------
 # metadata
 # ---------------------------------------------------------------------------
@@ -114,9 +139,10 @@ def list_districts(severity: str = Query("severe")) -> dict:
 
 
 @router.get("/api/districts/{code}", tags=["districts"])
-def district_detail(code: str, severity: str = Query("severe")) -> dict:
-    sc = _scenario(code, severity)
-    return {
+def district_detail(code: str, severity: str = Query("severe"),
+                    live: bool = Query(False)) -> dict:
+    sc, fell_back = _scenario_maybe_live(code, severity, live)
+    body = {
         **sc.summary(),
         "boundary": sc.boundary.geojson({"code": sc.district.code,
                                          "name": sc.district.name}),
@@ -129,6 +155,9 @@ def district_detail(code: str, severity: str = Query("severe")) -> dict:
              "lon": f.lon, "capacity": f.capacity}
             for f in sc.exposure.facilities],
     }
+    if fell_back:
+        body["live_fallback"] = {"requested": "live", "served": "design storm"}
+    return body
 
 
 @router.get("/api/districts/{code}/assessment", tags=["districts"])
@@ -141,14 +170,7 @@ def assessment(code: str, severity: str = Query("severe"),
     to the design storm and says so in ``provenance`` rather than silently
     serving a synthetic result labelled live.
     """
-    sc = None
-    fell_back = False
-    if live:
-        sc = scenario.get_live(code)
-        if sc is None:
-            fell_back = True
-    if sc is None:
-        sc = _scenario(code, severity)
+    sc, fell_back = _scenario_maybe_live(code, severity, live)
     body = {
         "summary": sc.summary(),
         "impact": sc.impact.to_dict(),
@@ -171,9 +193,11 @@ def assessment(code: str, severity: str = Query("severe"),
 
 
 @router.get("/api/districts/{code}/timeline", tags=["districts"])
-def timeline(code: str, severity: str = Query("severe")) -> dict:
+def timeline(code: str, severity: str = Query("severe"),
+            live: bool = Query(False)) -> dict:
     """Per-hour series driving the time slider."""
-    return _scenario(code, severity).timeline_series()
+    sc, _ = _scenario_maybe_live(code, severity, live)
+    return sc.timeline_series()
 
 
 @router.get("/api/districts/{code}/deforestation", tags=["red zones"])
@@ -284,7 +308,8 @@ def live_district(code: str) -> dict:
 
 @router.get("/api/watch", tags=["national"])
 def watch_board(date: Optional[str] = Query(None),
-                river: bool = Query(True)) -> dict:
+                river: bool = Query(True),
+                force: bool = Query(False)) -> dict:
     """Which districts need attention right now, and exactly why.
 
     The live board. For each of the 22 modelled districts it reads the vertical
@@ -309,12 +334,17 @@ def watch_board(date: Optional[str] = Query(None),
     Replay dates that have been pre-computed by ``scripts/bake_demo_boards.py``
     are served from disk in milliseconds and need no network. A replayed day
     cannot change, so that is the same arithmetic rather than a stale cache.
+
+    ``force=true`` bypasses the 15-minute cache for a live read and re-runs the
+    whole pipeline against Open-Meteo right now - the one moment a
+    demonstration is better served by a genuine re-read than a cached one.
+    Ignored for a replay, since a replayed day has nothing new to read.
     """
     if date:
         pre = watch_mod.baked(date)
         if pre is not None:
             return pre
-    return watch_mod.get(with_river=river, date=date).to_dict()
+    return watch_mod.get(with_river=river, date=date, force=force).to_dict()
 
 
 @router.get("/api/national/districts", tags=["national"])
@@ -652,12 +682,14 @@ def zone_detail(code: str, zone_id: str, severity: str = Query("severe")) -> dic
 # ---------------------------------------------------------------------------
 
 @router.get("/api/districts/{code}/layers", tags=["layers"])
-def layer_index(code: str, severity: str = Query("severe")) -> dict:
-    sc = _scenario(code, severity)
+def layer_index(code: str, severity: str = Query("severe"),
+                live: bool = Query(False)) -> dict:
+    sc, _ = _scenario_maybe_live(code, severity, live)
     out = []
     for name, (title, ramp, unit, needs_event) in LAYERS.items():
         entry = {"name": name, "title": title, "unit": unit,
-                 "url": "/api/districts/%s/layers/%s.png" % (code, name)}
+                 "url": "/api/districts/%s/layers/%s.png%s"
+                        % (code, name, "?live=true" if live else "")}
         if ramp:
             vmin, vmax = _layer_range(sc, name)
             entry["legend"] = render.legend(ramp, vmin, vmax, unit)
@@ -682,11 +714,12 @@ def _layer_range(sc: scenario.Scenario, name: str):
 @router.get("/api/districts/{code}/layers/{name}.png", tags=["layers"])
 def layer_png(code: str, name: str, severity: str = Query("severe"),
               hour: Optional[int] = Query(None, ge=0),
-              scale: int = Query(4, ge=1, le=8)) -> Response:
+              scale: int = Query(4, ge=1, le=8),
+              live: bool = Query(False)) -> Response:
     """One raster layer as an RGBA PNG, ready for a Leaflet image overlay."""
     if name not in LAYERS:
         raise HTTPException(404, "unknown layer %r" % name)
-    sc = _scenario(code, severity)
+    sc, _ = _scenario_maybe_live(code, severity, live)
     t = sc.terrain
     inside = sc.exposure.district_mask
 

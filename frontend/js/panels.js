@@ -591,6 +591,16 @@ export function renderNationalDistricts(el, d) {
 const ACTION_TONE = { ACT: "severe", PREPARE: "alert", WATCH: "watch",
                       ROUTINE: "ok" };
 
+/** "3s ago" / "4m 12s ago" from an ISO timestamp — ticked client-side so the
+ *  page visibly ages between refreshes instead of freezing on one string. */
+export function relTime(iso) {
+  const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60), r = s % 60;
+  if (m < 60) return `${m}m ${r}s ago`;
+  return `${Math.floor(m / 60)}h ${m % 60}m ago`;
+}
+
 export function renderWatchStats(el, d) {
   const c = d.counts;
   const replay = d.mode === "replay";
@@ -599,6 +609,7 @@ export function renderWatchStats(el, d) {
       <div class="stat-k">${replay ? "Replay of" : "Data"}</div>
       <div class="stat-v" ${replay ? 'data-tone="alert"' : ""}
            style="font-size:${replay ? 15 : 19}px">
+        ${!replay && d.live ? '<span class="live-dot"></span>' : ""}
         ${replay ? esc(d.replay_date) : (d.live ? "LIVE" : "OFFLINE")}</div>
     </div>
     <div class="stat">
@@ -704,14 +715,27 @@ export function renderWatchBoard(el, d) {
   const board = d.districts.filter((r) => r.action !== "ROUTINE");
   const quiet = d.districts.length - board.length;
 
+  const isReplay = d.mode === "replay";
   el.innerHTML = `
     <div class="card">
-      <h3>${d.mode === "replay" ? "Replay — not live" : "Live now"}</h3>
+      <div class="watch-hd-row">
+        <h3>${isReplay ? "Replay — not live" : "Live now"}</h3>
+        ${isReplay ? "" : `<button class="refresh-btn" id="watch-refresh"
+             title="Re-read live weather right now, bypassing the cache">
+             &#8635; Refresh live</button>`}
+      </div>
       <div class="card-sub">${esc(d.source).toUpperCase()}</div>
       <p class="note" style="margin-top:12px">${esc(d.headline)}</p>
       <p class="card-sub" style="margin-top:8px">
-        Read at ${esc(d.generated_at)} in ${d.build_seconds}s.
-        ${d.counts.river_simulations} river simulation${d.counts.river_simulations === 1 ? "" : "s"} run.
+        ${isReplay
+          ? `Pre-computed for this replay date, from the ERA5 archive
+             (${d.build_seconds}s to compute) — not a live read, so there is
+             nothing to count up "ago" from.`
+          : `Read <span class="watch-updated" id="watch-updated"
+                      data-generated="${esc(d.generated_at)}"
+                      >${relTime(d.generated_at)}</span>
+             (${d.build_seconds}s to compute).
+             ${d.counts.river_simulations} river simulation${d.counts.river_simulations === 1 ? "" : "s"} run.`}
       </p>
     </div>
 

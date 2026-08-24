@@ -513,3 +513,118 @@ table.tbl td.r { text-align: right; font-variant-numeric: tabular-nums;
 .subtab:hover { color: var(--text); }
 .subtab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
 
+/* --- the live board: proof-of-life, not just a claim -------------------- */
+
+/* A still page and a live one look identical in a screenshot. This is the
+   difference in front of a judge: a dot that visibly breathes, so "LIVE"
+   reads as a fact being demonstrated rather than a label being asserted. */
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .45; transform: scale(.72); }
+}
+.live-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ok); margin-right: 6px; vertical-align: 1px;
+  animation: pulse-live 1.8s var(--ease) infinite;
+}
+.stat-v[data-tone="severe"] .live-dot,
+.live-dot[data-tone="severe"] { background: var(--severe); }
+
+.watch-hd-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s3); flex-wrap: wrap;
+}
+.watch-updated {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The refresh button is the deliberate "watch me do this live" moment — a
+   presenter's own action producing a genuinely new, timestamped read rather
+   than a cached one. It earns a slightly heavier visual weight than an
+   ordinary control for exactly that reason. */
+.refresh-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent-bg); border: 1px solid var(--accent);
+  color: var(--accent); border-radius: var(--radius);
+  padding: 5px var(--s3); font-size: var(--t-sm); font-weight: 600;
+  cursor: pointer; transition: background var(--dur) var(--ease),
+                              transform var(--dur) var(--ease);
+}
+.refresh-btn:hover:not(:disabled) { background: var(--accent); color: #fff; }
+.refresh-btn:active:not(:disabled) { transform: scale(.96); }
+.refresh-btn:disabled { opacity: .65; cursor: default; }
+.refresh-btn .spin {
+  display: inline-block; width: 11px; height: 11px;
+  border: 2px solid currentColor; border-top-color: transparent;
+  border-radius: 50%; animation: spin-refresh .7s linear infinite;
+}
+@keyframes spin-refresh { to { transform: rotate(360deg); } }
+
+/* A card that just arrived from a forced refresh gets one soft highlight
+   sweep, so a genuinely new read is visible even to someone glancing away
+   and back — not just provable by re-reading the timestamp. */
+@keyframes flash-fresh {
+  0%   { background: var(--accent-bg); }
+  100% { background: transparent; }
+}
+.watch.just-updated { animation: flash-fresh 1.6s var(--ease); }
+
+/* Cards entering the board step in rather than snapping into place, so the
+   first paint of a live screen already looks like something that moves. */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.watch { animation: card-in 340ms var(--ease) both; }
+.watch:nth-child(1) { animation-delay: 0ms; }
+.watch:nth-child(2) { animation-delay: 40ms; }
+.watch:nth-child(3) { animation-delay: 80ms; }
+.watch:nth-child(4) { animation-delay: 120ms; }
+.watch:nth-child(5) { animation-delay: 160ms; }
+.watch:nth-child(n+6) { animation-delay: 200ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot, .refresh-btn .spin, .watch, .watch.just-updated {
+    animation: none !important;
+  }
+}
+
+/* --- the district-screen live-rainfall toggle --------------------------- */
+
+/* Off by default (synthetic design storm) so nothing changes until a
+   presenter deliberately asks for it. Once on, the whole district view -
+   map, ranked zones, action cards, time slider - is describing the same
+   real event, because every endpoint behind it now shares one fallback rule
+   instead of each screen quietly picking its own answer. */
+.live-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface-2); border: var(--border); color: var(--text-2);
+  border-radius: var(--radius); padding: 5px var(--s3); font-size: var(--t-sm);
+  font-weight: 500; cursor: pointer;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
+              color var(--dur) var(--ease);
+}
+.live-toggle:hover { border-color: var(--accent); color: var(--text); }
+.live-toggle-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-3); transition: background var(--dur) var(--ease);
+}
+.live-toggle.is-live {
+  background: var(--ok-bg); border-color: var(--ok); color: var(--ok);
+}
+.live-toggle.is-live .live-toggle-dot { background: var(--ok); animation: pulse-live 1.8s var(--ease) infinite; }
+.live-toggle.fell-back {
+  background: var(--alert-bg); border-color: var(--alert); color: var(--alert);
+}
+.live-toggle.fell-back .live-toggle-dot { background: var(--alert); }
+.live-toggle.is-loading { opacity: .75; cursor: wait; }
+.live-toggle.is-loading .live-toggle-dot {
+  background: var(--accent); animation: spin-refresh 1s linear infinite;
+  border-radius: 2px;         /* reads as "working" rather than "live" while it spins */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-toggle-dot { animation: none !important; }
+}
+

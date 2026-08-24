@@ -29,9 +29,10 @@ export class FloodMap {
 
   /* --- base relief ------------------------------------------------------- */
 
-  setDistrict(code, severity, bounds) {
+  setDistrict(code, severity, bounds, live = false) {
     this.code = code;
     this.severity = severity;
+    this.live = live;          // basemap is terrain-only and unaffected by it
     this.bounds = L.latLngBounds(bounds);
 
     if (this.base) this.base.remove();
@@ -46,7 +47,7 @@ export class FloodMap {
 
   setOverlay(name, hour) {
     if (!this.code) return;
-    const url = api.layerUrl(this.code, name, this.severity, hour);
+    const url = api.layerUrl(this.code, name, this.severity, hour, this.live);
     // Swap by loading the new image before removing the old one, so the map
     // never flashes empty while the time slider is being dragged.
     //
