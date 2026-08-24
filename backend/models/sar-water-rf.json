@@ -1,0 +1,64 @@
+{
+  "model": "sar-water-rf",
+  "task": "binary classification: flooded / not flooded",
+  "metrics": {
+    "precision": 0.9502,
+    "recall": 0.9766,
+    "f1": 0.9632
+  },
+  "baseline": {
+    "precision": 0.8963,
+    "recall": 0.5233,
+    "f1": 0.6608
+  },
+  "improvement": {
+    "precision": 0.0539,
+    "recall": 0.4533,
+    "f1": 0.3024
+  },
+  "feature_importance": [
+    {
+      "feature": "hand",
+      "importance": 0.364
+    },
+    {
+      "feature": "vv_db",
+      "importance": 0.2301
+    },
+    {
+      "feature": "vv_local_mean",
+      "importance": 0.1728
+    },
+    {
+      "feature": "slope",
+      "importance": 0.1209
+    },
+    {
+      "feature": "accum_log",
+      "importance": 0.0484
+    },
+    {
+      "feature": "vv_local_std",
+      "importance": 0.0365
+    },
+    {
+      "feature": "twi",
+      "importance": 0.0273
+    }
+  ],
+  "samples_train": 153612,
+  "samples_test": 34136,
+  "held_out_districts": [
+    "BR-SIT",
+    "HP-MAN",
+    "OD-BAL",
+    "TN-CHN"
+  ],
+  "train_seconds": 75.23,
+  "validation": "Split by district, not at random. Neighbouring cells are autocorrelated, so a random split trains on a cell's own neighbours and reports an accuracy that means nothing.",
+  "notes": [
+    "Baseline is the physics chain: Lee filter, Otsu threshold, change detection against a pre-event scene, then the permanent-water, slope and HAND masks.",
+    "Labels come from the simulated flood the detector was never shown. In live mode these would be Sen1Floods11 or Copernicus EMS rapid-mapping labels."
+  ],
+  "lower_is_better": []
+}

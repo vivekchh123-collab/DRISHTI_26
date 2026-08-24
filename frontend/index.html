@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRISHTI — Multi-Hazard Red Zones</title>
+<meta name="description" content="GIS decision support for State Disaster Management Authorities: multi-hazard Red Zones unsuitable for permanent habitation, carrying capacity of safer relocation sites, and prioritised relocation of vulnerable habitations.">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="hdr">
+    <div class="brand">
+      <span class="brand-mark">DRISHTI</span>
+      <span class="brand-sub">Multi-Hazard Red Zones</span>
+    </div>
+
+    <div class="tabs" id="screen-tabs" role="tablist" aria-label="Screen">
+      <button class="tab" role="tab" data-group="now"      aria-selected="true">Now</button>
+      <button class="tab" role="tab" data-group="district" aria-selected="false">District</button>
+      <button class="tab" role="tab" data-group="india"    aria-selected="false">India</button>
+    </div>
+
+    <select class="ctl" id="watch-date" aria-label="Board date">
+      <option value="">Live now</option>
+      <option value="2024-07-30">Replay · Wayanad, 30 Jul 2024</option>
+      <option value="2022-06-17">Replay · Assam floods, 17 Jun 2022</option>
+      <option value="2023-07-09">Replay · North India, 9 Jul 2023</option>
+      <option value="2020-07-15">Replay · Assam floods, 15 Jul 2020</option>
+    </select>
+    <select class="ctl" id="district-select" aria-label="District"></select>
+    <select class="ctl" id="state-select" aria-label="State" hidden></select>
+    <select class="ctl" id="severity-select" aria-label="Event severity">
+      <option value="moderate">Moderate · 5-year</option>
+      <option value="severe" selected>Severe · 25-year</option>
+      <option value="extreme">Extreme · 100-year</option>
+    </select>
+
+    <span class="hdr-spacer"></span>
+
+    <span class="prov" id="prov" data-mode="demo" title="Loading">Demo data</span>
+    <button class="ctl" id="theme-toggle" aria-label="Toggle colour theme">Light</button>
+    <a class="ctl" href="/docs" target="_blank" rel="noopener">API</a>
+  </header>
+
+  <nav class="subtabs" id="subtabs" role="tablist" aria-label="Section"></nav>
+
+  <div class="main" id="main" data-screen="watch">
+
+    <!-- left: layers -->
+    <aside class="pane pane-l" id="pane-left">
+      <div class="pane-hd"><h2>Map layers</h2></div>
+      <div class="pane-body" id="layer-list"></div>
+      <div class="opacity-row">
+        <label for="opacity">Overlay opacity <span class="mono" id="opacity-val">85%</span></label>
+        <input type="range" id="opacity" min="10" max="100" value="85">
+      </div>
+    </aside>
+
+    <!-- centre: map -->
+    <section class="map-wrap" id="map-wrap">
+      <div id="map" role="application" aria-label="District flood map"></div>
+      <div class="map-badge" id="map-badge" hidden>
+        <h3 id="badge-name">—</h3>
+        <p id="badge-sub">—</p>
+      </div>
+      <div class="legend" id="legend" hidden>
+        <h4 id="legend-title">Legend</h4>
+        <div class="legend-bar" id="legend-bar"></div>
+        <div class="legend-scale" id="legend-scale"></div>
+      </div>
+    </section>
+
+    <!-- right: ranked zones + action card -->
+    <aside class="pane pane-r" id="pane-right">
+      <div class="stats" id="stats"></div>
+      <div class="pane-hd">
+        <h2 id="right-title">Worst affected</h2>
+        <span class="mono" id="right-count" style="font-size:11px;color:var(--text-3)"></span>
+      </div>
+      <div class="tabs" id="national-view" role="tablist"
+           aria-label="National coverage" hidden
+           style="margin:0 var(--s3) var(--s2)">
+        <button class="tab" role="tab" data-nview="grid"
+                aria-selected="true">27 km squares</button>
+        <button class="tab" role="tab" data-nview="districts"
+                aria-selected="false">All 735 districts</button>
+      </div>
+      <div class="pane-body" id="right-body"></div>
+    </aside>
+  </div>
+
+  <footer class="timeline" id="timeline" hidden>
+    <button class="tl-btn" id="play" aria-label="Play event timeline" title="Play">
+      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+        <path id="play-icon" d="M2 1l9 5-9 5z" fill="currentColor"></path>
+      </svg>
+    </button>
+    <div class="tl-track">
+      <canvas class="tl-spark" id="spark" height="34" aria-hidden="true"></canvas>
+      <input type="range" id="hour" min="0" max="95" value="0"
+             aria-label="Hour of the flood event">
+    </div>
+    <div class="tl-read">
+      <div class="tl-hour" id="tl-hour">Hour 0</div>
+      <div class="tl-sub" id="tl-sub">—</div>
+    </div>
+  </footer>
+
+  <!-- History screen: a separate scrubber, because it steps in years rather
+       than hours and accumulates the record instead of replaying one event. -->
+  <footer class="timeline" id="history-bar" hidden>
+    <button class="tl-btn" id="hist-play" aria-label="Play the disaster record"
+            title="Play">
+      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+        <path id="hist-play-icon" d="M2 1l9 5-9 5z" fill="currentColor"></path>
+      </svg>
+    </button>
+    <div class="tl-track">
+      <canvas class="tl-spark" id="hist-spark" height="34" aria-hidden="true"></canvas>
+      <input type="range" id="hist-year" min="1990" max="2026" value="2026"
+             aria-label="Year in the disaster record">
+    </div>
+    <div class="tl-read">
+      <div class="tl-hour mono" id="hist-year-label">2026</div>
+      <div class="tl-sub" id="hist-sub">observed record</div>
+    </div>
+  </footer>
+</div>
+
+<script src="vendor/leaflet.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,645 @@
+<title>DRISHTI Team Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,ital,wght@8..60,0,400;8..60,0,600;8..60,1,400&display=swap">
+
+<style>
+  :root{
+    --paper:#EDEFF2; --card:#F7F8FA;
+    --ink:#16202E; --ink-2:#41546B; --ink-3:#6C7F94;
+    --rule:#C9D2DC; --rule-soft:#DDE3EA;
+    --indigo:#1F3A5F; --drainage:#1D6E86; --drainage-soft:#D6E7EC;
+    --hazard:#A93318; --hazard-soft:#F2DBD4;
+    --amber:#9A6B12; --amber-soft:#F3E6CB;
+    --green:#2C6B4F; --green-soft:#D8E8DF;
+    --f-display:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --wrap:1040px; --read:64ch;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0D141C; --card:#141D27;
+      --ink:#DEE5EC; --ink-2:#A8B7C6; --ink-3:#7B8C9D;
+      --rule:#2A3947; --rule-soft:#1E2A36;
+      --indigo:#8FB3D9; --drainage:#5FB6CE; --drainage-soft:#12313B;
+      --hazard:#E5765A; --hazard-soft:#3A1B12;
+      --amber:#D9A748; --amber-soft:#33260E;
+      --green:#6DBE95; --green-soft:#12281D;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0D141C; --card:#141D27;
+    --ink:#DEE5EC; --ink-2:#A8B7C6; --ink-3:#7B8C9D;
+    --rule:#2A3947; --rule-soft:#1E2A36;
+    --indigo:#8FB3D9; --drainage:#5FB6CE; --drainage-soft:#12313B;
+    --hazard:#E5765A; --hazard-soft:#3A1B12;
+    --amber:#D9A748; --amber-soft:#33260E;
+    --green:#6DBE95; --green-soft:#12281D;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:var(--f-body); font-size:17px; line-height:1.62;
+    margin:0; padding:0 24px 96px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:var(--wrap);margin:0 auto}
+
+  /* masthead */
+  .mast{border-bottom:2px solid var(--ink);padding:56px 0 24px;margin-bottom:8px}
+  .kicker{
+    font-family:var(--f-mono);font-size:.68rem;font-weight:600;
+    letter-spacing:.17em;text-transform:uppercase;color:var(--hazard);margin:0 0 14px;
+  }
+  h1{
+    font-family:var(--f-display);font-weight:700;
+    font-size:clamp(2.4rem,6.5vw,3.9rem);letter-spacing:-.035em;line-height:.96;
+    margin:0;text-wrap:balance;
+  }
+  .sub{font-size:1.15rem;color:var(--ink-2);max-width:var(--read);margin:16px 0 0}
+  .sub strong{color:var(--ink);font-weight:600}
+
+  /* sections */
+  section{margin-top:58px}
+  .beat{
+    display:grid;grid-template-columns:96px 1fr;gap:0 26px;
+    border-top:1px solid var(--rule);padding-top:26px;
+  }
+  @media(max-width:680px){.beat{grid-template-columns:1fr;gap:12px}}
+  .beat-k{
+    font-family:var(--f-mono);font-size:.66rem;font-weight:600;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--drainage);
+    padding-top:7px;line-height:1.5;
+  }
+  h2{
+    font-family:var(--f-display);font-weight:600;
+    font-size:clamp(1.5rem,3.4vw,2rem);letter-spacing:-.024em;line-height:1.13;
+    margin:0 0 14px;text-wrap:balance;
+  }
+  h3{font-family:var(--f-display);font-weight:600;font-size:1.05rem;margin:0 0 8px;text-wrap:balance}
+  p{margin:0 0 15px;max-width:var(--read)}
+  .muted{color:var(--ink-2)}
+  strong{font-weight:600}
+
+  /* the speakable line */
+  .say{
+    border-left:3px solid var(--hazard);
+    background:var(--card);
+    padding:18px 22px;
+    margin:20px 0;
+    border-radius:0 3px 3px 0;
+  }
+  .say .lbl{
+    font-family:var(--f-mono);font-size:.62rem;font-weight:600;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--hazard);
+    display:block;margin-bottom:9px;
+  }
+  .say p{
+    font-style:italic;font-size:1.12rem;line-height:1.55;
+    color:var(--ink);margin:0 0 11px;max-width:none;
+  }
+  .say p:last-child{margin-bottom:0}
+
+  /* memorise block */
+  .memo{
+    border:2px solid var(--indigo);border-radius:3px;
+    padding:24px 26px;background:var(--card);margin:8px 0 0;
+  }
+  .memo .lbl{
+    font-family:var(--f-mono);font-size:.63rem;font-weight:600;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--indigo);
+    display:block;margin-bottom:14px;
+  }
+  .memo ol{margin:0;padding-left:22px;counter-reset:m}
+  .memo li{
+    margin-bottom:13px;font-size:1.02rem;color:var(--ink);
+  }
+  .memo li:last-child{margin-bottom:0}
+  .memo li b{font-weight:600}
+
+  /* clocks */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+  @media(max-width:680px){.two{grid-template-columns:1fr}}
+  .box{
+    background:var(--card);border:1px solid var(--rule);
+    border-top:3px solid var(--drainage);border-radius:3px;padding:18px 20px;
+  }
+  .box.b2{border-top-color:var(--hazard)}
+  .box .t{
+    font-family:var(--f-mono);font-size:.64rem;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--drainage);margin-bottom:8px;
+  }
+  .box.b2 .t{color:var(--hazard)}
+  .box p{font-size:.94rem;color:var(--ink-2);margin:8px 0 0}
+  .box .q{
+    font-family:var(--f-display);font-weight:600;font-size:1rem;
+    color:var(--ink);display:block;margin-top:9px;
+  }
+
+  /* numbers */
+  .nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:0;
+        border-top:1px solid var(--rule);border-left:1px solid var(--rule);margin:20px 0}
+  .n{padding:14px 16px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  .n b{
+    display:block;font-family:var(--f-mono);font-size:1.35rem;font-weight:600;
+    letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--indigo);
+  }
+  .n span{
+    font-family:var(--f-mono);font-size:.64rem;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--ink-3);line-height:1.45;display:block;margin-top:3px;
+  }
+
+  /* chain */
+  .chain{counter-reset:c;margin:20px 0 0;padding:0;list-style:none}
+  .chain li{
+    display:grid;grid-template-columns:34px 1fr;gap:16px;
+    padding:14px 0;border-bottom:1px solid var(--rule-soft);align-items:start;
+  }
+  .chain li:first-child{border-top:1px solid var(--rule-soft)}
+  .chain li::before{
+    counter-increment:c;content:counter(c);
+    font-family:var(--f-mono);font-size:.82rem;font-weight:600;
+    color:var(--paper);background:var(--indigo);
+    width:26px;height:26px;display:grid;place-items:center;border-radius:2px;margin-top:2px;
+  }
+  .chain b{font-family:var(--f-display);font-weight:600;display:block;margin-bottom:2px}
+  .chain span{font-size:.95rem;color:var(--ink-2)}
+  .chain code{
+    font-family:var(--f-mono);font-size:.83em;color:var(--drainage);
+    background:var(--drainage-soft);padding:1px 5px;border-radius:2px;
+  }
+
+  /* formulas */
+  .fmls{display:grid;gap:12px;margin-top:20px}
+  .fml{
+    border:1px solid var(--rule);border-radius:3px;background:var(--card);
+    padding:15px 18px;
+  }
+  .fml h4{
+    font-family:var(--f-display);font-weight:600;font-size:.97rem;margin:0 0 7px;
+  }
+  .fml .eq{
+    font-family:var(--f-mono);font-size:.86rem;color:var(--drainage);
+    background:var(--drainage-soft);padding:8px 11px;border-radius:2px;
+    margin:0 0 8px;overflow-x:auto;white-space:pre;
+  }
+  .fml p{font-size:.92rem;color:var(--ink-2);margin:0;max-width:none}
+
+  /* Q&A drill */
+  .qa{border-top:1px solid var(--rule);margin-top:22px}
+  .q-item{border-bottom:1px solid var(--rule-soft);padding:20px 0}
+  .q-item .q{
+    font-family:var(--f-display);font-weight:600;font-size:1.06rem;
+    color:var(--hazard);margin:0 0 10px;max-width:var(--read);
+  }
+  .q-item .q::before{content:"“";}
+  .q-item .q::after{content:"”";}
+  .q-item .a{font-size:.99rem;color:var(--ink);margin:0;max-width:var(--read)}
+  .q-item .a b{font-weight:600}
+  .q-item .a + .a{margin-top:10px}
+
+  /* ownership */
+  .own{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:20px}
+  .o{border:1px solid var(--rule);border-left:3px solid var(--drainage);
+     border-radius:0 3px 3px 0;padding:16px 18px;background:var(--card)}
+  .o .r{
+    font-family:var(--f-mono);font-size:.62rem;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--drainage);margin-bottom:8px;
+  }
+  .o p{font-size:.9rem;color:var(--ink-2);margin:0;max-width:none}
+  .o ul{margin:8px 0 0;padding-left:17px}
+  .o li{font-size:.88rem;color:var(--ink-2);margin-bottom:4px}
+  .o code{font-family:var(--f-mono);font-size:.85em;color:var(--drainage)}
+
+  /* open items */
+  .open{border:1px solid var(--amber);border-left-width:3px;border-radius:0 3px 3px 0;
+        padding:20px 22px;background:var(--card);margin-top:18px}
+  .open ul{margin:0;padding-left:19px}
+  .open li{margin-bottom:9px;color:var(--ink-2);font-size:.95rem}
+  .open li:last-child{margin-bottom:0}
+  .open li b{color:var(--ink);font-weight:600}
+
+  footer{
+    margin-top:66px;padding-top:20px;border-top:2px solid var(--ink);
+    font-family:var(--f-mono);font-size:.72rem;line-height:1.7;color:var(--ink-3);
+    display:flex;flex-wrap:wrap;gap:8px 28px;
+  }
+  :focus-visible{outline:2px solid var(--drainage);outline-offset:3px}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="kicker">Internal · brief everyone before the round</p>
+    <h1>DRISHTI Team Brief</h1>
+    <p class="sub">
+      Everything the team needs to <strong>explain, defend and demo</strong> DRISHTI — without
+      memorising code. If each person can deliver Sections 1 to 3 cold, no judge can catch the
+      team out.
+    </p>
+  </header>
+
+  <!-- 1 -->
+  <section>
+    <div class="beat">
+      <div class="beat-k">Section 1<br>Say it cold</div>
+      <div>
+        <h2>The thirty-second version</h2>
+        <p class="muted">Everyone on the team says the same two sentences. Not similar ones — the same ones.</p>
+
+        <div class="say">
+          <span class="lbl">Say this</span>
+          <p>“Relocation in India today starts <em>after</em> the disaster. DRISHTI says which
+             villages to move <em>before</em> the next one.”</p>
+          <p>“We take free satellite elevation, work out how often every patch of land gets hit,
+             and rank the habitations that shouldn't be there — then say where they go, how many
+             fit, which law applies, and which officer signs.”</p>
+        </div>
+
+        <p>If someone wants one more line, it is this one:</p>
+        <div class="say">
+          <span class="lbl">The closer</span>
+          <p>“If a flood comes back faster than your wall lasts, you are not protecting that
+             village — you are rebuilding a wall it will outlive.”</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="beat">
+      <div class="beat-k">Section 2<br>The one idea</div>
+      <div>
+        <h2>The system runs on two clocks</h2>
+        <p class="muted">
+          If a team member understands only one thing, make it this. Every architecture question
+          resolves here — including “how can you afford to run this nationally?”
+        </p>
+
+        <div class="two">
+          <div class="box">
+            <div class="t">Slow clock · computed once</div>
+            <h3>The land doesn't change this week</h3>
+            <span class="q">“Where is dangerous?”</span>
+            <p>Terrain, drainage, red zones. Built from satellite elevation, baked to disk, served
+               offline forever.</p>
+          </div>
+          <div class="box b2">
+            <div class="t">Fast clock · every 30 min</div>
+            <h3>The sky changes by the hour</h3>
+            <span class="q">“Where is dangerous right now?”</span>
+            <p>Cloud structure, rainfall, soil, river response. Cheap, so it runs over the whole
+               country continuously.</p>
+          </div>
+        </div>
+
+        <div class="say">
+          <span class="lbl">Say this</span>
+          <p>“Rain over empty ground is weather. The same rain over a district where three lakh
+             people already live inside a red zone is an emergency. Only a system holding both
+             clocks at once can tell those two apart.”</p>
+        </div>
+
+        <p>
+          It is also the cost answer: a full district assessment takes seconds, so running it for
+          735 districts continuously is impossible. <strong>A cheap grid screens the whole country;
+          the expensive physics is spent only where the grid fires.</strong>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="beat">
+      <div class="beat-k">Section 3<br>The chain</div>
+      <div>
+        <h2>Six steps, one sentence each</h2>
+        <p class="muted">Anyone should be able to walk this without notes.</p>
+
+        <ol class="chain">
+          <li><div><b>Read the land</b><span>Free 30 m satellite elevation → work out how high every square sits above its nearest stream. That number is called <code>HAND</code>.</span></div></li>
+          <li><div><b>Make it rain</b><span>Rain falls, some soaks in, the rest runs off and raises the river. We solve for the river level in metres, hour by hour.</span></div></li>
+          <li><div><b>Draw the hazards</b><span>Five of them — flood, landslide, waterlogging, coastal erosion, cloudburst — each with its own published method.</span></div></li>
+          <li><div><b>Find the red zones</b><span>Run all five at a 5-, 25- and 100-year storm. What comes out is <b>how often each place gets hit</b>.</span></div></li>
+          <li><div><b>Count the people</b><span>Who lives there, and how exposed they are — weighted with Census 2011 literacy, SC/ST share and rural share.</span></div></li>
+          <li><div><b>Say what to do</b><span>Where they move, how many fit, protect-or-relocate, the legal instrument, the named authority, the SOP.</span></div></li>
+        </ol>
+
+        <div class="say">
+          <span class="lbl">The line that makes HAND click</span>
+          <p>“A cell with HAND of two metres floods when the river rises two metres — anywhere on
+             the map. That one number turns a river gauge into a map of whose house is underwater.”</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="beat">
+      <div class="beat-k">Section 4<br>Know cold</div>
+      <div>
+        <h2>The numbers to have on the tip of your tongue</h2>
+        <div class="nums">
+          <div class="n"><b>735</b><span>districts covered</span></div>
+          <div class="n"><b>22</b><span>full physics</span></div>
+          <div class="n"><b>30 m</b><span>satellite resolution</span></div>
+          <div class="n"><b>5</b><span>hazards</span></div>
+          <div class="n"><b>3</b><span>return periods</span></div>
+          <div class="n"><b>308</b><span>tests passing</span></div>
+          <div class="n"><b>0</b><span>API keys needed</span></div>
+          <div class="n"><b>20</b><span>named authorities</span></div>
+          <div class="n"><b>15</b><span>legal instruments</span></div>
+          <div class="n"><b>41</b><span>cited past disasters</span></div>
+          <div class="n"><b>328</b><span>cyclone tracks</span></div>
+          <div class="n"><b>25 yr</b><span>protection design life</span></div>
+        </div>
+        <p class="muted">
+          <strong>Zero API keys</strong> is a bigger deal than it sounds — say it out loud. It means
+          any state can run this tomorrow without a procurement cycle or a data-sharing agreement.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="beat">
+      <div class="beat-k">Section 5<br>The maths</div>
+      <div>
+        <h2>How each piece is actually calculated</h2>
+        <p class="muted">
+          You do not need to derive these. You need to be able to say what goes in and what comes
+          out, and to point out that <strong>every weight is published in the app</strong>.
+        </p>
+
+        <div class="fmls">
+          <div class="fml">
+            <h4>Runoff — how much rain becomes flood</h4>
+            <div class="eq">S = 25400/CN − 254
+Q = (P − 0.2S)² / (P − 0.2S + S)</div>
+            <p>The USDA Curve Number method. CN runs 30–98: concrete is about 90 because it absorbs
+               nothing, forest on sand is under 50.</p>
+          </div>
+
+          <div class="fml">
+            <h4>Flood depth</h4>
+            <div class="eq">depth = river level at your outlet − your HAND</div>
+            <p>That is the entire flood map. Positive means underwater.</p>
+          </div>
+
+          <div class="fml">
+            <h4>Landslide — BIS IS 14496 (Part 2)</h4>
+            <div class="eq">lithology 2 + structure 2 + slope 2 + land use 2
++ relief 1 + hydrogeology 1  =  TEHD out of 10</div>
+            <p>The Indian national standard, not an invented index. Above 7.5 is “very high”. A
+               state engineer already knows this scheme and already has procedure attached to it.</p>
+          </div>
+
+          <div class="fml">
+            <h4>Coastal erosion — Bruun 1962</h4>
+            <div class="eq">retreat = sea-level rise ÷ nearshore slope</div>
+            <p>Gentle slopes retreat furthest for the same rise — which is exactly why Odisha's
+               deltas and the Sundarbans lose land fastest.</p>
+          </div>
+
+          <div class="fml">
+            <h4>Who moves first — priority score</h4>
+            <div class="eq">0.34 people exposed   0.26 how often it recurs
+0.16 how uninhabitable   0.16 how vulnerable
+0.08 share of settlement hit</div>
+            <p>Two villages with the same headcount and the same flood do not rank equally — the
+               kachcha-housed one ranks higher. That is the word “vulnerable” in the problem
+               statement, turned into arithmetic.</p>
+          </div>
+
+          <div class="fml">
+            <h4>Where they go — site suitability</h4>
+            <div class="eq">0.26 safety margin   0.22 road access
+0.16 water access    0.14 buildable slope
+0.12 land headroom   0.10 farmland conflict</div>
+            <p>Water access is deliberately non-monotonic — too far is a supply problem, too close
+               is a flood problem. Capacity is 2,500 people/km² rural, 8,000 urban.</p>
+          </div>
+
+          <div class="fml">
+            <h4>Protect or relocate</h4>
+            <div class="eq">hazard returns faster than 25 years → RELOCATE</div>
+            <p>25 years is the design life of a protection structure. This single comparison is what
+               turns a hazard map into a decision.</p>
+          </div>
+
+          <div class="fml">
+            <h4>Cloud state — four rules, no machine learning</h4>
+            <div class="eq">a level counts as filled   ≥ 55% cover
+anvil signature       high − low ≥ 25 points
+CAPE moderate/strong  1000 / 2500 J/kg</div>
+            <p>All three levels filled with CAPE over 2500 is deep convection. Add the anvil and it
+               is a mature system — cirrus blowing off a storm that has already topped out.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <div class="beat">
+      <div class="beat-k">Section 6<br>Drill this</div>
+      <div>
+        <h2>Hard questions, and the answer</h2>
+        <p class="muted">
+          Run this as a drill. One person asks, another answers, out loud. The answers are short on
+          purpose — <strong>the shortest true answer always wins the room.</strong>
+        </p>
+
+        <div class="qa">
+          <div class="q-item">
+            <p class="q">Isn't this just a weather app?</p>
+            <p class="a">A weather app tells you it will rain. We tell you that rain lands on two
+               lakh people living exactly where the water goes. <b>The terrain half is the half a
+               weather app doesn't have.</b></p>
+          </div>
+
+          <div class="q-item">
+            <p class="q">Where is the AI?</p>
+            <p class="a">Two trained models, used to make national screening fast — and
+               <b>deliberately kept out of the decision path</b>.</p>
+            <p class="a">A model that predicts rainfall is a model you have to believe. Every number
+               that drives a decision here is a published weight over a stated threshold, and you
+               can audit each one in the app.</p>
+          </div>
+
+          <div class="q-item">
+            <p class="q">Are those real river gauge readings?</p>
+            <p class="a"><b>No, and the app says so on every single response.</b> There is no public,
+               documented, keyless CWC feed — we tried three routes and wrote up what happened in
+               the code.</p>
+            <p class="a">River level is routed from live rainfall through real 30 m terrain and
+               labelled <b>modelled</b>. A modelled stage shown as a gauge reading would be a lie
+               with a decimal point on it.</p>
+          </div>
+
+          <div class="q-item">
+            <p class="q">Only 22 districts? That's not national.</p>
+            <p class="a">All <b>735</b> are covered, in two tiers, labelled on every record. 22 have
+               full physics; the rest get live weather screening that plainly says it is not a
+               hazard assessment.</p>
+            <p class="a">Promotion is a <b>data task, not a code change</b> — bake a district's
+               elevation and it moves tier. The pipeline already handles all 735. What the other 713
+               are waiting on is disk space, not development.</p>
+          </div>
+
+          <div class="q-item">
+            <p class="q">How do you know the flood model is right?</p>
+            <p class="a">We tested it against events that actually happened. Historical disasters
+               land at a mean susceptibility percentile of <b>66.6 against 50 by chance</b>, Spearman
+               ρ = 0.46. Flood-extent detection scores <b>F1 0.81</b> on real terrain.</p>
+            <p class="a">We report those numbers whatever they say. That is why you can trust the
+               ones that are good.</p>
+          </div>
+
+          <div class="q-item">
+            <p class="q">What happens if the venue Wi-Fi dies?</p>
+            <p class="a">Everything except the live board keeps working, from baked data. <b>Unplug
+               it and try</b> — that offer is part of the demo.</p>
+          </div>
+
+          <div class="q-item">
+            <p class="q">Hazard atlases already exist. Why build this?</p>
+            <p class="a">Those are static PDFs at state scale, revised every several years. This is
+               <b>30 m, recomputed on demand</b>, and it goes all the way to naming the habitation
+               and the officer who signs the order.</p>
+          </div>
+
+          <div class="q-item">
+            <p class="q">Relocation is politically impossible. Isn't this academic?</p>
+            <p class="a">That is exactly why the output ends at a <b>legal instrument and a named
+               authority</b>. RFCTLARR 2013, DM Act sections 30, 31 and 38, CRZ 2019, PMAY-G — the
+               powers already exist.</p>
+            <p class="a">We are not inventing authority. We are pointing at it, with evidence
+               attached.</p>
+          </div>
+
+          <div class="q-item">
+            <p class="q">Other teams are also doing flood mapping. What's different?</p>
+            <p class="a">They map <em>the flood</em>. We map <b>how often it comes back</b>, and
+               compare that against how long a protection wall lasts. Recurrence versus design life
+               is the decision — the map is just how we get there.</p>
+          </div>
+
+          <div class="q-item">
+            <p class="q">What data do you still need?</p>
+            <p class="a">CWC river gauges — and that is the only one. Everything else is already
+               live or already baked, and needs <b>no credentials at all</b>.</p>
+          </div>
+
+          <div class="q-item">
+            <p class="q">Why should a state trust a hackathon prototype?</p>
+            <p class="a">Because nothing in it is bespoke where a standard exists. The landslide
+               rating is <b>BIS IS 14496</b>. The rainfall bands are <b>IMD's own warning
+               categories</b>. The cloudburst definition is IMD's. The runoff method is USDA.</p>
+            <p class="a">A District Magistrate already has standing orders attached to those words.
+               That is worth more than a cleverer index nobody can act on.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section>
+    <div class="beat">
+      <div class="beat-k">Section 7<br>Split it up</div>
+      <div>
+        <h2>Who should own what</h2>
+        <p class="muted">
+          Four areas. Each person should be able to answer <em>anything</em> in their area and
+          Sections 1–3 for everything else.
+        </p>
+        <div class="own">
+          <div class="o">
+            <div class="r">Owner A · Terrain &amp; water</div>
+            <p>The physics half of the story.</p>
+            <ul>
+              <li>HAND, flow routing, why zero pits matters</li>
+              <li>Runoff and river stage</li>
+              <li><code>terrain.py</code>, <code>hydrology.py</code>, <code>flood.py</code></li>
+            </ul>
+          </div>
+          <div class="o">
+            <div class="r">Owner B · Hazards &amp; red zones</div>
+            <p>The standards half — the most defensible ground.</p>
+            <ul>
+              <li>BIS IS 14496, Bruun, IMD cloudburst</li>
+              <li>Recurrence and the habitability thresholds</li>
+              <li><code>landslide.py</code>, <code>redzone.py</code></li>
+            </ul>
+          </div>
+          <div class="o">
+            <div class="r">Owner C · People &amp; the plan</div>
+            <p>The part that makes it a decision, not a map.</p>
+            <ul>
+              <li>Vulnerability weighting, priority score</li>
+              <li>Carrying capacity, protect-vs-relocate</li>
+              <li>Authorities, legal instruments, SOPs</li>
+            </ul>
+          </div>
+          <div class="o">
+            <div class="r">Owner D · Live &amp; the demo</div>
+            <p>Drives the laptop. Never improvises.</p>
+            <ul>
+              <li>Cloud states, urgency scoring, the board</li>
+              <li>Loads the board <b>before</b> walking in</li>
+              <li>Runs <code>DEMO_SCRIPT.md</code> exactly</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section>
+    <div class="beat">
+      <div class="beat-k">Section 8<br>Be honest</div>
+      <div>
+        <h2>What we openly do not claim</h2>
+        <p class="muted">
+          Brief the team on these <em>first</em>. The fastest way to lose a technical panel is to be
+          caught overselling one number — and the fastest way to win one is to raise the limitation
+          before they do.
+        </p>
+        <div class="open">
+          <ul>
+            <li><b>River level is modelled, never gauged.</b> No public CWC feed exists.</li>
+            <li><b>The cloud read is not a rainfall forecast.</b> It says the sky is organising and
+                how fast. It is never blended with the rain forecast into one invented number.</li>
+            <li><b>Return periods are exceedance bands, not fitted curves.</b> Five years of daily
+                data holds five annual maxima — far too few for extreme-value fitting.</li>
+            <li><b>The disaster register and Census indicators are curated, not live.</b> No free API
+                carries Indian flood history, so every row shows its citation and source URL.</li>
+            <li><b>Satellite rasters are baked, not streamed.</b> That is the deliberate trade that
+                makes the app work with the network unplugged.</li>
+          </ul>
+        </div>
+        <div class="say" style="margin-top:22px">
+          <span class="lbl">If a judge finds a limitation first</span>
+          <p>“Yes — and it's stated on that screen. Here.” Then show them. <b>Never defend a number
+             the app already qualifies.</b></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>DRISHTI · SIH26191 · Ministry of Home Affairs / NDRF, DM Division</span>
+    <span>Demo walkthrough: docs/DEMO_SCRIPT.md</span>
+    <span>Full pipeline: docs/workflow.html</span>
+  </footer>
+
+</div>

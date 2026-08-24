@@ -1,0 +1,515 @@
+/* ==========================================================================
+   DRISHTI — layout and components
+   Selector specificity is kept flat and single-class throughout, so nothing
+   silently cancels anything else's spacing.
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%; margin: 0;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font-sans); font-size: var(--t-base); line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.num  { font-variant-numeric: tabular-nums; }
+
+/* --- app shell ----------------------------------------------------------- */
+.app { display: grid; grid-template-rows: auto 1fr auto; height: 100%; }
+
+/* --- header -------------------------------------------------------------- */
+.hdr {
+  display: flex; align-items: center; gap: var(--s4);
+  padding: 0 var(--s4); height: 52px;
+  background: var(--surface-1); border-bottom: var(--border);
+}
+.brand { display: flex; align-items: baseline; gap: var(--s2); margin-right: var(--s2); }
+.brand-mark {
+  font-family: var(--font-cond); font-weight: 700; font-size: var(--t-lg);
+  letter-spacing: .01em;
+}
+.brand-sub {
+  font-family: var(--font-mono); font-size: var(--t-xs);
+  color: var(--text-3); letter-spacing: .07em; text-transform: uppercase;
+}
+.hdr-spacer { flex: 1; }
+
+.tabs { display: flex; gap: 2px; background: var(--surface-2);
+        padding: 3px; border-radius: var(--radius); border: var(--border); }
+.tab {
+  border: 0; background: transparent; color: var(--text-2);
+  padding: 5px var(--s3); border-radius: 2px; cursor: pointer;
+  font-size: var(--t-sm); font-weight: 500;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.tab:hover { color: var(--text); background: var(--surface-3); }
+.tab[aria-selected="true"] { background: var(--accent); color: #fff; }
+
+.ctl {
+  background: var(--surface-2); border: var(--border); color: var(--text);
+  border-radius: var(--radius); padding: 6px var(--s2); font-size: var(--t-sm);
+  cursor: pointer;
+}
+.ctl:hover { border-color: var(--accent); }
+
+/* provenance badge — permanent, never hidden */
+.prov {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  padding: 5px var(--s3); border-radius: var(--radius);
+  font-family: var(--font-mono); font-size: var(--t-xs);
+  letter-spacing: .07em; text-transform: uppercase;
+  background: var(--alert-bg); color: var(--alert);
+  border: 1px solid currentColor;
+}
+.prov::before { content: ""; width: 6px; height: 6px; border-radius: 50%;
+                background: currentColor; flex: none; }
+.prov[data-mode="live"]      { background: var(--ok-bg);    color: var(--ok); }
+.prov[data-mode="modelled"]  { background: var(--watch-bg); color: var(--watch); }
+
+/* --- main region --------------------------------------------------------- */
+.main { display: grid; grid-template-columns: 232px 1fr 372px; min-height: 0; }
+.main[data-screen="national"] { grid-template-columns: 232px 1fr 372px; }
+
+.pane { min-height: 0; display: flex; flex-direction: column;
+        background: var(--surface-1); }
+.pane-l { border-right: var(--border); }
+.pane-r { border-left: var(--border); }
+
+.pane-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s2); padding: var(--s3) var(--s4);
+  border-bottom: var(--border); background: var(--surface-1);
+  position: sticky; top: 0; z-index: 2;
+}
+.pane-hd h2 {
+  margin: 0; font-family: var(--font-mono); font-size: var(--t-xs);
+  font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-3);
+}
+.pane-body { overflow-y: auto; overscroll-behavior: contain; flex: 1; }
+
+/* --- map ----------------------------------------------------------------- */
+.map-wrap { position: relative; min-height: 0; background: var(--bg); }
+#map { position: absolute; inset: 0; background: var(--bg); }
+.leaflet-container { background: var(--bg); font-family: var(--font-sans); }
+.leaflet-control-attribution { display: none; }
+
+.map-badge {
+  position: absolute; left: var(--s4); top: var(--s4); z-index: 500;
+  background: var(--surface-1); border: var(--border); border-radius: var(--radius);
+  padding: var(--s2) var(--s3); box-shadow: var(--shadow-2); pointer-events: none;
+}
+.map-badge h3 { margin: 0 0 2px; font-family: var(--font-cond);
+                font-size: var(--t-lg); font-weight: 700; }
+.map-badge p { margin: 0; font-size: var(--t-xs); color: var(--text-3);
+               font-family: var(--font-mono); letter-spacing: .05em; }
+
+.legend {
+  position: absolute; right: var(--s4); bottom: var(--s4); z-index: 500;
+  background: var(--surface-1); border: var(--border); border-radius: var(--radius);
+  padding: var(--s3); box-shadow: var(--shadow-2); min-width: 168px;
+}
+.legend h4 { margin: 0 0 var(--s2); font-family: var(--font-mono);
+             font-size: var(--t-xs); letter-spacing: .08em; text-transform: uppercase;
+             color: var(--text-3); font-weight: 500; }
+.legend-bar { display: flex; height: 8px; border-radius: 2px; overflow: hidden; }
+.legend-bar i { flex: 1; }
+.legend-scale { display: flex; justify-content: space-between; margin-top: 5px;
+                font-family: var(--font-mono); font-size: 10px; color: var(--text-3); }
+
+/* --- layer switcher ------------------------------------------------------ */
+.layer { display: flex; align-items: center; gap: var(--s3);
+         padding: var(--s2) var(--s4); cursor: pointer; border: 0;
+         background: transparent; width: 100%; text-align: left;
+         color: var(--text-2); border-left: 2px solid transparent; }
+.layer:hover { background: var(--surface-2); color: var(--text); }
+.layer[aria-pressed="true"] { background: var(--surface-2); color: var(--text);
+                              border-left-color: var(--accent); }
+.layer-swatch { width: 14px; height: 14px; border-radius: 2px; flex: none;
+                border: 1px solid rgba(255,255,255,.14); }
+.layer-name { font-size: var(--t-sm); }
+
+.opacity-row { padding: var(--s3) var(--s4); border-top: var(--border); }
+.opacity-row label { display: flex; justify-content: space-between;
+                     font-family: var(--font-mono); font-size: var(--t-xs);
+                     letter-spacing: .07em; text-transform: uppercase;
+                     color: var(--text-3); margin-bottom: var(--s2); }
+
+input[type="range"] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 20px;
+  background: transparent; cursor: grab; margin: 0; display: block;
+}
+input[type="range"]:active { cursor: grabbing; }
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px; background: var(--surface-3); border-radius: 2px; }
+input[type="range"]::-moz-range-track {
+  height: 3px; background: var(--surface-3); border-radius: 2px; }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface-1);
+  box-shadow: 0 0 0 1px var(--accent); margin-top: -6px; }
+input[type="range"]::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%; background: var(--accent);
+  border: 2px solid var(--surface-1); box-shadow: 0 0 0 1px var(--accent); }
+
+/* --- stat strip ---------------------------------------------------------- */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+         background: var(--line-soft); border-bottom: var(--border); }
+.stat { background: var(--surface-1); padding: var(--s3) var(--s4); }
+.stat-k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .09em;
+          text-transform: uppercase; color: var(--text-3); }
+.stat-v { font-family: var(--font-cond); font-weight: 700; font-size: var(--t-xl);
+          line-height: 1.15; font-variant-numeric: tabular-nums; margin-top: 1px; }
+.stat-v small { font-family: var(--font-mono); font-size: var(--t-xs);
+                font-weight: 400; color: var(--text-3); margin-left: 4px; }
+.stat-v[data-tone="severe"] { color: var(--severe); }
+.stat-v[data-tone="alert"]  { color: var(--alert); }
+
+/* --- ranked zone list ---------------------------------------------------- */
+.zone {
+  display: grid; grid-template-columns: 26px 1fr auto; gap: var(--s3);
+  align-items: baseline; width: 100%; text-align: left;
+  padding: var(--s3) var(--s4); border: 0; border-bottom: 1px solid var(--line-soft);
+  background: transparent; color: inherit; cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: background var(--dur) var(--ease);
+}
+.zone:hover { background: var(--surface-2); }
+.zone[aria-current="true"] { background: var(--surface-2); border-left-color: var(--accent); }
+.zone-rank { font-family: var(--font-mono); font-size: var(--t-sm);
+             color: var(--text-3); font-variant-numeric: tabular-nums; }
+.zone-main { min-width: 0; }
+.zone-label { font-weight: 500; font-size: var(--t-base);
+              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zone-meta { font-family: var(--font-mono); font-size: var(--t-xs);
+             color: var(--text-3); margin-top: 2px; letter-spacing: .02em;
+             /* Driver strings carry parenthesised figures like "(176 mm/24h)"
+                that a browser will not break, and one of them is enough to push
+                the row wider than the pane. */
+             overflow-wrap: anywhere; }
+.zone-score { font-family: var(--font-cond); font-weight: 700; font-size: var(--t-md);
+              font-variant-numeric: tabular-nums; }
+
+.pill { display: inline-block; padding: 1px 6px; border-radius: 2px;
+        font-family: var(--font-mono); font-size: 10px; letter-spacing: .05em;
+        text-transform: uppercase; margin-left: var(--s2); }
+.pill[data-tone="severe"] { background: var(--severe-bg); color: var(--severe); }
+.pill[data-tone="alert"]  { background: var(--alert-bg);  color: var(--alert); }
+.pill[data-tone="watch"]  { background: var(--watch-bg);  color: var(--watch); }
+.pill[data-tone="ok"]     { background: var(--ok-bg);     color: var(--ok); }
+
+/* --- action card --------------------------------------------------------- */
+.card { padding: var(--s4); border-bottom: var(--border); }
+.card h3 { margin: 0 0 var(--s1); font-family: var(--font-cond);
+           font-weight: 700; font-size: var(--t-lg); line-height: 1.2; }
+.card-sub { font-family: var(--font-mono); font-size: var(--t-xs);
+            color: var(--text-3); letter-spacing: .04em; }
+
+.kv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+      background: var(--line-soft); border: var(--border); border-radius: var(--radius);
+      overflow: hidden; margin-top: var(--s3); }
+.kv > div { background: var(--surface-2); padding: var(--s2) var(--s3); }
+.kv-k { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em;
+        text-transform: uppercase; color: var(--text-3); }
+.kv-v { font-family: var(--font-cond); font-weight: 700; font-size: var(--t-md);
+        font-variant-numeric: tabular-nums; }
+
+.sect { margin-top: var(--s4); }
+.sect > h4 { margin: 0 0 var(--s2); font-family: var(--font-mono);
+             font-size: var(--t-xs); font-weight: 500; letter-spacing: .09em;
+             text-transform: uppercase; color: var(--text-3); }
+
+.act { display: grid; grid-template-columns: auto 1fr; gap: var(--s3);
+       padding: var(--s2) 0; border-bottom: 1px solid var(--line-soft); }
+.act:last-child { border-bottom: 0; }
+.act-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; flex: none; }
+.act-dot[data-p="immediate"] { background: var(--severe); }
+.act-dot[data-p="urgent"]    { background: var(--alert); }
+.act-dot[data-p="routine"]   { background: var(--text-3); }
+.act-role { font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em;
+            text-transform: uppercase; color: var(--accent); }
+.act-text { font-size: var(--t-sm); color: var(--text-2); margin-top: 1px; }
+.act-src { font-size: 10px; color: var(--text-3); margin-top: 3px; font-style: italic; }
+
+.escal { background: var(--severe-bg); border: 1px solid var(--severe);
+         border-radius: var(--radius); padding: var(--s3); margin-top: var(--s3); }
+.escal p { margin: 0 0 var(--s2); font-size: var(--t-sm); color: var(--text); }
+.escal p:last-child { margin-bottom: 0; }
+
+.note { background: var(--surface-2); border: var(--border);
+        border-radius: var(--radius); padding: var(--s3);
+        font-size: var(--t-sm); color: var(--text-2); }
+.alert-draft { font-family: var(--font-mono); font-size: var(--t-xs);
+               line-height: 1.6; color: var(--text-2);
+               background: var(--surface-2); border: var(--border);
+               border-radius: var(--radius); padding: var(--s3);
+               white-space: pre-wrap; }
+
+/* Wide content scrolls inside its own box; the page body never scrolls
+   sideways. Without this the IMD band table pushed the whole document wider
+   than the viewport. */
+.card, .sect { min-width: 0; }
+.pane-body { overflow-x: hidden; }
+table.tbl { width: 100%; table-layout: fixed; border-collapse: collapse;
+            font-size: var(--t-sm); }
+table.tbl td, table.tbl th { overflow-wrap: anywhere; }
+table.tbl th, table.tbl td { text-align: left; padding: 5px var(--s2);
+                             border-bottom: 1px solid var(--line-soft); }
+table.tbl th { font-family: var(--font-mono); font-size: 9.5px; font-weight: 500;
+               letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+table.tbl td.r { text-align: right; font-variant-numeric: tabular-nums;
+                 font-family: var(--font-mono); }
+
+/* --- timeline ------------------------------------------------------------ */
+.timeline {
+  display: grid; grid-template-columns: auto 1fr auto; gap: var(--s4);
+  align-items: center; padding: var(--s3) var(--s4);
+  background: var(--surface-1); border-top: var(--border);
+}
+.tl-btn { background: var(--surface-2); border: var(--border);
+          border-radius: var(--radius); width: 34px; height: 30px; cursor: pointer;
+          display: grid; place-items: center; color: var(--text); }
+.tl-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tl-track { position: relative; }
+.tl-spark { display: block; width: 100%; height: 34px; }
+.tl-read { text-align: right; min-width: 168px; }
+.tl-hour { font-family: var(--font-cond); font-weight: 700; font-size: var(--t-lg);
+           font-variant-numeric: tabular-nums; }
+.tl-sub { font-family: var(--font-mono); font-size: var(--t-xs); color: var(--text-3); }
+
+/* --- national table ------------------------------------------------------ */
+.nat { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+.nat th { position: sticky; top: 0; background: var(--surface-1); z-index: 1;
+          text-align: left; padding: var(--s3) var(--s4); border-bottom: var(--border);
+          font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+          letter-spacing: .09em; text-transform: uppercase; color: var(--text-3); }
+.nat td { padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line-soft); }
+.nat tbody tr { cursor: pointer; }
+.nat tbody tr:hover { background: var(--surface-2); }
+.nat td.r { text-align: right; font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums; }
+.riskbar { height: 5px; border-radius: 2px; background: var(--surface-3);
+           position: relative; overflow: hidden; min-width: 54px; }
+.riskbar i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; }
+
+/* --- states: designed, not afterthoughts --------------------------------- */
+.skel { background: linear-gradient(90deg, var(--surface-2) 25%,
+        var(--surface-3) 37%, var(--surface-2) 63%);
+        background-size: 400% 100%; animation: shimmer 1.3s ease infinite;
+        border-radius: 2px; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+.skel-row { height: 46px; margin: 0; border-bottom: 1px solid var(--line-soft); }
+
+.empty { padding: var(--s8) var(--s4); text-align: center; color: var(--text-3); }
+.empty strong { display: block; color: var(--text-2); font-weight: 500;
+                margin-bottom: var(--s1); font-size: var(--t-md); }
+.empty p { margin: 0; font-size: var(--t-sm); }
+
+.err { margin: var(--s4); padding: var(--s3); border-radius: var(--radius);
+       background: var(--severe-bg); border: 1px solid var(--severe);
+       color: var(--text); font-size: var(--t-sm); }
+.err strong { display: block; margin-bottom: 2px; }
+
+/* --- map vector styling -------------------------------------------------- */
+.zone-marker { border-radius: 50%; border: 2px solid #fff;
+               box-shadow: 0 0 0 1px rgba(0,0,0,.5); }
+.leaflet-popup-content-wrapper { background: var(--surface-1); color: var(--text);
+                                 border-radius: var(--radius); border: var(--border); }
+.leaflet-popup-tip { background: var(--surface-1); }
+.leaflet-popup-content { margin: var(--s3); font-size: var(--t-sm); }
+.leaflet-bar a { background: var(--surface-1); color: var(--text);
+                 border-bottom-color: var(--line); }
+.leaflet-bar a:hover { background: var(--surface-2); }
+
+/* --- responsive ---------------------------------------------------------- */
+/* The header carries a brand, four tabs, two selects, a provenance badge and
+   two buttons. Below about 1200px that no longer fits on one line, and a fixed
+   52px row makes it overflow the document rather than wrap — which is what
+   pushed the whole page into horizontal scroll. */
+@media (max-width: 1280px) {
+  .hdr { height: auto; min-height: 52px; flex-wrap: wrap;
+         padding: var(--s2) var(--s3); gap: var(--s2) var(--s3); }
+  .brand-sub { display: none; }
+  .hdr-spacer { display: none; }
+}
+@media (max-width: 1180px) {
+  .main { grid-template-columns: 1fr 340px; }
+  .pane-l { display: none; }
+}
+@media (max-width: 860px) {
+  .main { grid-template-columns: 1fr; }
+  .pane-r { display: none; }
+}
+
+/* ------------------------------------------------------------ history screen */
+
+.hist-summary {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--line); border-bottom: var(--border);
+}
+.hist-summary .ro {
+  background: var(--surface-2); padding: var(--s2) var(--s3);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.hist-summary .ro-k {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.hist-summary .ro-v {
+  font-family: var(--font-cond); font-weight: 700; font-size: var(--t-md);
+  color: var(--text-1); font-variant-numeric: tabular-nums;
+}
+
+/* The provenance note is not decoration. This screen mixes a live NOAA feed
+   with hand-curated rows, and a viewer must never have to guess which. */
+.hist-note {
+  margin: 0; padding: var(--s2) var(--s3);
+  font-size: var(--t-xs); line-height: 1.45; color: var(--text-3);
+  background: var(--surface-2); border-bottom: var(--border);
+}
+
+.hist-row { display: grid; grid-template-columns: 42px 1fr auto auto; }
+.hist-row .zone-n { font-size: var(--t-sm); }
+
+.hkv {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: var(--s3); padding: 5px 0; border-bottom: 1px dotted var(--line);
+  font-size: var(--t-sm);
+}
+.hkv:last-of-type { border-bottom: 0; }
+.hkv span { color: var(--text-3); }
+.hkv b { font-variant-numeric: tabular-nums; color: var(--text-1); }
+
+.cite {
+  margin: var(--s3) 0 0; font-size: var(--t-xs); line-height: 1.5;
+  color: var(--text-3);
+}
+.cite a { color: var(--accent); }
+
+.muted { margin: 0 0 var(--s2); font-size: var(--t-xs); color: var(--text-3); }
+
+.tag {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .05em;
+  padding: 2px 6px; border-radius: 2px; text-transform: uppercase;
+  background: var(--surface-3); color: var(--text-2);
+}
+.tag-flood       { background: #12354d; color: #8FC4E2; }
+.tag-landslide   { background: #3a2410; color: #E0A34A; }
+.tag-cyclone     { background: #2c1f45; color: #C4B5FD; }
+.tag-cloudburst  { background: #0d3330; color: #5EEAD4; }
+.tag-glof        { background: #0b2c40; color: #7DD3FC; }
+
+/* Older events fade rather than vanish, so the accumulated record reads as
+   depth in time instead of a flat scatter of dots. */
+.hist-track { transition: opacity .18s ease; }
+.hist-event { transition: opacity .18s ease, fill-opacity .18s ease; }
+
+/* -------------------------------------------------------------- state view */
+
+.export-row {
+  display: flex; gap: var(--s2); padding: var(--s3);
+  border-bottom: var(--border);
+}
+.export-row .ctl { flex: 1; text-align: center; text-decoration: none; }
+
+.tag-none { background: var(--surface-3); color: var(--text-3); }
+
+/* Print: an SDMA takes a sheet into a budget meeting, so the summary has to
+   survive Ctrl-P. Drop the chrome, keep the numbers and the ranked list. */
+@media print {
+  .hdr, .pane-l, .map-wrap, .timeline, .export-row, .tabs { display: none !important; }
+  .app, .main { display: block !important; height: auto !important; }
+  .pane-r { width: 100% !important; border: 0 !important; }
+  .pane-body { overflow: visible !important; }
+  .zone { break-inside: avoid; }
+  body { background: #fff !important; color: #000 !important; }
+  .kv > div, .note, .hist-note { background: #f4f4f4 !important; color: #000 !important; }
+}
+
+/* --- the live watch board (NOW) ---------------------------------------- */
+
+/* One card per district needing attention. Denser than a .zone row because
+   every signal has to carry its own number: a duty officer who cannot see what
+   produced the score has no way to disagree with it, and a score nobody can
+   argue with is a score nobody trusts. */
+.watch {
+  display: block; padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--line-soft);
+  border-left: 2px solid transparent; cursor: pointer; width: 100%;
+  text-align: left; background: transparent;
+  transition: background var(--dur) var(--ease);
+}
+.watch:hover { background: var(--surface-2); border-left-color: var(--accent); }
+
+.watch-hd { display: flex; align-items: baseline; gap: var(--s2); }
+.watch-rank {
+  font-family: var(--font-mono); font-size: var(--t-sm); color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.watch-name { flex: 1; font-weight: 600; font-size: var(--t-base); min-width: 0; }
+.watch-state {
+  font-weight: 400; font-size: var(--t-xs); color: var(--text-3);
+  margin-left: var(--s2);
+}
+.watch-urg {
+  font-family: var(--font-cond); font-weight: 700; font-size: var(--t-md);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Signals in a grid so the numbers line up down the column and can be compared
+   between districts at a glance. */
+.sigs {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: var(--s2); margin-top: var(--s3);
+}
+.sig {
+  background: var(--surface-2); border: var(--border);
+  border-radius: var(--radius); padding: 6px var(--s2); min-width: 0;
+}
+.sig-k {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.sig-v {
+  font-weight: 600; font-size: var(--t-base); margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.sig-n {
+  font-size: var(--t-xs); color: var(--text-3); margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.watch-pop {
+  margin: var(--s3) 0 0; font-size: var(--t-sm); color: var(--text-2);
+}
+.watch-why {
+  margin: var(--s2) 0 0; padding-left: 1.05em; font-size: var(--t-sm);
+  color: var(--text-2);
+}
+.watch-why li { margin-top: 2px; overflow-wrap: anywhere; }
+.watch-lead {
+  margin: var(--s2) 0 0; font-size: var(--t-xs); color: var(--text-3);
+}
+
+/* --- secondary navigation ---------------------------------------------- */
+
+/* The primary tabs answer "which of the three things am I doing"; these answer
+   "which part of it". Splitting them is what took the header from six
+   competing choices down to three. */
+.subtabs {
+  display: flex; gap: var(--s3); padding: 0 var(--s4);
+  border-bottom: 1px solid var(--line-soft); background: var(--surface);
+}
+.subtab {
+  border: 0; background: transparent; color: var(--text-3);
+  padding: 9px 0; cursor: pointer; font-size: var(--t-sm); font-weight: 500;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.subtab:hover { color: var(--text); }
+.subtab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+

@@ -1,0 +1,918 @@
+<title>Inside DRISHTI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+  /* ---- light palette: a hydrological survey sheet ---- */
+  :root{
+    --paper:#EDEFF2;
+    --card:#F7F8FA;
+    --ink:#16202E;
+    --ink-2:#41546B;
+    --ink-3:#6C7F94;
+    --rule:#C9D2DC;
+    --rule-soft:#DDE3EA;
+    --indigo:#1F3A5F;
+    --drainage:#1D6E86;
+    --drainage-soft:#D6E7EC;
+    --hazard:#A93318;
+    --hazard-soft:#F2DBD4;
+    --amber:#9A6B12;
+    --amber-soft:#F3E6CB;
+    --green:#2C6B4F;
+    --green-soft:#D8E8DF;
+
+    --f-display:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+    --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+
+    --wrap:1080px;
+    --read:66ch;
+  }
+
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0D141C;
+      --card:#141D27;
+      --ink:#DEE5EC;
+      --ink-2:#A8B7C6;
+      --ink-3:#7B8C9D;
+      --rule:#2A3947;
+      --rule-soft:#1E2A36;
+      --indigo:#8FB3D9;
+      --drainage:#5FB6CE;
+      --drainage-soft:#12313B;
+      --hazard:#E5765A;
+      --hazard-soft:#3A1B12;
+      --amber:#D9A748;
+      --amber-soft:#33260E;
+      --green:#6DBE95;
+      --green-soft:#12281D;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0D141C;
+    --card:#141D27;
+    --ink:#DEE5EC;
+    --ink-2:#A8B7C6;
+    --ink-3:#7B8C9D;
+    --rule:#2A3947;
+    --rule-soft:#1E2A36;
+    --indigo:#8FB3D9;
+    --drainage:#5FB6CE;
+    --drainage-soft:#12313B;
+    --hazard:#E5765A;
+    --hazard-soft:#3A1B12;
+    --amber:#D9A748;
+    --amber-soft:#33260E;
+    --green:#6DBE95;
+    --green-soft:#12281D;
+  }
+
+  *{box-sizing:border-box}
+
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--f-body);
+    font-size:17px;
+    line-height:1.62;
+    margin:0;
+    padding:0 24px 96px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:var(--wrap);margin:0 auto}
+
+  /* ---------- masthead ---------- */
+  .mast{
+    border-bottom:2px solid var(--ink);
+    padding:56px 0 22px;
+    margin-bottom:14px;
+  }
+  .mast-top{
+    display:flex;flex-wrap:wrap;align-items:baseline;gap:14px 20px;
+  }
+  h1{
+    font-family:var(--f-display);
+    font-weight:700;
+    font-size:clamp(2.5rem,7vw,4.1rem);
+    letter-spacing:-.035em;
+    line-height:.95;
+    margin:0;
+    text-wrap:balance;
+  }
+  .ps{
+    font-family:var(--f-mono);
+    font-size:.7rem;
+    font-weight:600;
+    letter-spacing:.13em;
+    text-transform:uppercase;
+    color:var(--paper);
+    background:var(--hazard);
+    padding:5px 10px;
+    border-radius:2px;
+    white-space:nowrap;
+  }
+  .thesis{
+    font-size:clamp(1.1rem,2.4vw,1.32rem);
+    color:var(--ink-2);
+    max-width:var(--read);
+    margin:18px 0 0;
+    text-wrap:balance;
+  }
+  .thesis strong{color:var(--ink);font-weight:600}
+
+  .facts{
+    display:flex;flex-wrap:wrap;gap:0;
+    border-top:1px solid var(--rule);
+    margin-top:26px;
+  }
+  .fact{
+    flex:1 1 130px;
+    padding:12px 18px 12px 0;
+    border-right:1px solid var(--rule-soft);
+  }
+  .fact:last-child{border-right:0}
+  .fact b{
+    display:block;
+    font-family:var(--f-mono);
+    font-size:1.32rem;
+    font-weight:600;
+    letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums;
+    color:var(--indigo);
+  }
+  .fact span{
+    font-family:var(--f-mono);
+    font-size:.66rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-3);
+  }
+
+  /* ---------- section furniture ---------- */
+  section{margin-top:62px}
+  .eyebrow{
+    font-family:var(--f-mono);
+    font-size:.68rem;
+    font-weight:600;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--drainage);
+    margin:0 0 10px;
+  }
+  h2{
+    font-family:var(--f-display);
+    font-weight:600;
+    font-size:clamp(1.55rem,3.6vw,2.1rem);
+    letter-spacing:-.024em;
+    line-height:1.12;
+    margin:0 0 12px;
+    text-wrap:balance;
+  }
+  h3{
+    font-family:var(--f-display);
+    font-weight:600;
+    font-size:1.06rem;
+    letter-spacing:-.012em;
+    margin:0;
+    text-wrap:balance;
+  }
+  .lede{max-width:var(--read);color:var(--ink-2);margin:0 0 26px}
+  .lede strong{color:var(--ink);font-weight:600}
+  p{margin:0 0 14px}
+
+  /* ---------- two clocks ---------- */
+  .clocks{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:30px}
+  @media(max-width:720px){.clocks{grid-template-columns:1fr}}
+  .clock{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-top:3px solid var(--drainage);
+    border-radius:3px;
+    padding:20px 22px;
+  }
+  .clock.fast{border-top-color:var(--hazard)}
+  .clock .tick{
+    font-family:var(--f-mono);
+    font-size:.66rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--drainage);margin-bottom:7px;
+  }
+  .clock.fast .tick{color:var(--hazard)}
+  .clock p{margin:8px 0 0;font-size:.95rem;color:var(--ink-2)}
+  .clock .q{
+    font-family:var(--f-display);font-weight:600;font-size:1.02rem;
+    color:var(--ink);margin-top:10px;display:block;
+  }
+
+  /* ---------- diagram ---------- */
+  .figure{
+    border:1px solid var(--rule);
+    background:var(--card);
+    border-radius:3px;
+    padding:8px;
+    overflow-x:auto;
+  }
+  .figure svg{display:block;min-width:820px;width:100%;height:auto}
+  figcaption{
+    font-family:var(--f-mono);font-size:.72rem;line-height:1.5;
+    color:var(--ink-3);margin-top:12px;padding:0 4px;
+  }
+  .d-label{font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+  .d-node{font-family:"Archivo",sans-serif;font-size:12.5px;font-weight:600}
+  .d-sub{font-family:"IBM Plex Mono",monospace;font-size:9px}
+
+  /* ---------- pipeline stages ---------- */
+  .stage{
+    display:grid;
+    grid-template-columns:58px 1fr;
+    gap:0 22px;
+    border-top:1px solid var(--rule);
+    padding:26px 0;
+  }
+  .stage:last-of-type{border-bottom:1px solid var(--rule)}
+  .num{
+    font-family:var(--f-mono);
+    font-size:.95rem;font-weight:600;
+    font-variant-numeric:tabular-nums;
+    color:var(--paper);
+    background:var(--indigo);
+    width:34px;height:34px;
+    display:grid;place-items:center;
+    border-radius:2px;
+  }
+  .stage.live .num{background:var(--hazard)}
+  .stage-hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:4px}
+  .tag{
+    font-family:var(--f-mono);font-size:.66rem;font-weight:500;
+    letter-spacing:.07em;
+    color:var(--ink-3);
+    border:1px solid var(--rule);
+    padding:2px 7px;border-radius:2px;
+  }
+  .plain{color:var(--ink-2);max-width:var(--read);margin:6px 0 16px}
+  .io{display:grid;gap:9px}
+  .io-row{display:grid;grid-template-columns:74px 1fr;gap:14px;align-items:start}
+  @media(max-width:600px){
+    .stage{grid-template-columns:1fr;gap:14px}
+    .io-row{grid-template-columns:1fr;gap:2px}
+  }
+  .io-k{
+    font-family:var(--f-mono);font-size:.65rem;font-weight:600;
+    letter-spacing:.11em;text-transform:uppercase;
+    color:var(--ink-3);padding-top:5px;
+  }
+  .io-v{font-size:.95rem;color:var(--ink)}
+  .io-v code{
+    font-family:var(--f-mono);font-size:.84em;
+    background:var(--drainage-soft);color:var(--drainage);
+    padding:1px 5px;border-radius:2px;
+  }
+  .why{
+    margin-top:15px;padding:11px 15px;
+    background:var(--drainage-soft);
+    border-left:2px solid var(--drainage);
+    border-radius:0 2px 2px 0;
+    font-size:.93rem;color:var(--ink);
+    max-width:var(--read);
+  }
+  .stage.live .why{background:var(--hazard-soft);border-left-color:var(--hazard)}
+  .why b{font-weight:600}
+
+  /* ---------- cloud states ---------- */
+  .states{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0 0}
+  @media(max-width:760px){.states{grid-template-columns:repeat(2,1fr)}}
+  .st{
+    border:1px solid var(--rule);border-radius:3px;
+    padding:14px 15px;background:var(--card);
+  }
+  .st .lv{
+    font-family:var(--f-mono);font-size:.62rem;font-weight:600;
+    letter-spacing:.11em;text-transform:uppercase;
+    display:inline-block;padding:2px 7px;border-radius:2px;margin-bottom:9px;
+  }
+  .st.s0 .lv{background:var(--green-soft);color:var(--green)}
+  .st.s1 .lv{background:var(--drainage-soft);color:var(--drainage)}
+  .st.s2 .lv{background:var(--amber-soft);color:var(--amber)}
+  .st.s3 .lv{background:var(--hazard-soft);color:var(--hazard)}
+  .st p{font-size:.87rem;color:var(--ink-2);margin:0}
+
+  /* ---------- tables ---------- */
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:3px;background:var(--card)}
+  table{border-collapse:collapse;width:100%;min-width:660px;font-size:.9rem}
+  thead th{
+    font-family:var(--f-mono);font-size:.64rem;font-weight:600;
+    letter-spacing:.11em;text-transform:uppercase;
+    text-align:left;color:var(--ink-3);
+    padding:11px 15px;border-bottom:1px solid var(--rule);
+    background:var(--paper);
+    position:sticky;top:0;
+  }
+  tbody td{padding:11px 15px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  tbody th{
+    text-align:left;font-weight:600;font-family:var(--f-display);
+    font-size:.9rem;padding:11px 15px;border-bottom:1px solid var(--rule-soft);
+    vertical-align:top;white-space:normal;
+  }
+  .grp td{
+    background:var(--paper);
+    font-family:var(--f-mono);font-size:.65rem;font-weight:600;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--indigo);
+    padding:9px 15px;
+  }
+  .ok,.part{
+    font-family:var(--f-mono);font-size:.63rem;font-weight:600;
+    letter-spacing:.07em;text-transform:uppercase;
+    padding:3px 7px;border-radius:2px;white-space:nowrap;
+  }
+  .ok{background:var(--green-soft);color:var(--green)}
+  .part{background:var(--amber-soft);color:var(--amber)}
+  td code,th code{
+    font-family:var(--f-mono);font-size:.8em;color:var(--drainage);
+    white-space:nowrap;
+  }
+
+  /* ---------- honesty block ---------- */
+  .honest{
+    border:1px solid var(--hazard);
+    border-left-width:3px;
+    border-radius:3px;
+    padding:22px 24px;
+    background:var(--card);
+  }
+  .honest h3{margin-bottom:10px}
+  .honest ul{margin:0;padding-left:19px}
+  .honest li{margin-bottom:9px;color:var(--ink-2);font-size:.95rem}
+  .honest li:last-child{margin-bottom:0}
+  .honest li b{color:var(--ink);font-weight:600}
+
+  .tiers{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
+  @media(max-width:720px){.tiers{grid-template-columns:1fr}}
+  .tier{border:1px solid var(--rule);border-radius:3px;padding:18px 20px;background:var(--card)}
+  .tier .lv{
+    font-family:var(--f-mono);font-size:.62rem;font-weight:600;
+    letter-spacing:.11em;text-transform:uppercase;
+    display:inline-block;padding:3px 8px;border-radius:2px;margin-bottom:10px;
+  }
+  .tier.m .lv{background:var(--green-soft);color:var(--green)}
+  .tier.s .lv{background:var(--amber-soft);color:var(--amber)}
+  .tier p{font-size:.92rem;color:var(--ink-2);margin:0 0 8px}
+  .tier p:last-child{margin-bottom:0}
+  .tier .n{
+    font-family:var(--f-mono);font-weight:600;font-size:1.5rem;
+    color:var(--ink);display:block;margin-bottom:6px;
+  }
+
+  footer{
+    margin-top:70px;padding-top:20px;
+    border-top:2px solid var(--ink);
+    font-family:var(--f-mono);font-size:.72rem;line-height:1.7;
+    color:var(--ink-3);
+    display:flex;flex-wrap:wrap;gap:8px 28px;
+  }
+
+  :focus-visible{outline:2px solid var(--drainage);outline-offset:3px}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <div class="mast-top">
+      <h1>Inside DRISHTI</h1>
+      <span class="ps">SIH26191 · MHA / NDRF</span>
+    </div>
+    <p class="thesis">
+      Relocation in India today begins <em>after</em> the disaster. DRISHTI answers three
+      questions before it: <strong>where is dangerous</strong>, <strong>where is dangerous right
+      now</strong>, and <strong>who has to move first</strong>.
+    </p>
+    <div class="facts">
+      <div class="fact"><b>735</b><span>districts covered</span></div>
+      <div class="fact"><b>22</b><span>fully modelled</span></div>
+      <div class="fact"><b>5</b><span>hazards</span></div>
+      <div class="fact"><b>3</b><span>return periods</span></div>
+      <div class="fact"><b>308</b><span>tests passing</span></div>
+      <div class="fact"><b>0</b><span>API keys needed</span></div>
+    </div>
+  </header>
+
+  <!-- ============ THE ONE IDEA ============ -->
+  <section>
+    <p class="eyebrow">The one idea</p>
+    <h2>The system runs on two clocks</h2>
+    <p class="lede">
+      Everything in DRISHTI hangs off this split. Understand it and the whole architecture
+      follows — including <strong>why it is affordable to run</strong>, which is the question
+      that kills most national-scale proposals.
+    </p>
+
+    <div class="clocks">
+      <div class="clock">
+        <div class="tick">Slow clock — computed once, then permanent</div>
+        <h3>The land does not change this week</h3>
+        <span class="q">“Where is dangerous?”</span>
+        <p>
+          Terrain, drainage, red zones. Built from satellite elevation, baked to disk, and
+          served offline forever. Expensive to compute, so it is computed once.
+        </p>
+      </div>
+      <div class="clock fast">
+        <div class="tick">Fast clock — every 30 minutes</div>
+        <h3>The sky changes by the hour</h3>
+        <span class="q">“Where is dangerous <em>right now</em>?”</span>
+        <p>
+          Cloud structure, rainfall, soil saturation, river response. Cheap to compute, so it
+          runs continuously over the whole country.
+        </p>
+      </div>
+    </div>
+
+    <p class="lede" style="margin-top:26px">
+      The two meet on the Live Board. Rain over empty ground is weather. The <em>same</em> rain
+      over a district where three lakh people already live inside a red zone is an emergency —
+      and only a system holding both clocks at once can tell those apart.
+    </p>
+
+    <figure class="figure" style="margin:0">
+      <svg viewBox="0 0 900 400" role="img" aria-label="Diagram: the slow clock builds red zones from satellite elevation; the fast clock scores live weather nationally; both feed the Live Board.">
+        <defs>
+          <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 z" fill="var(--ink-3)"/>
+          </marker>
+          <marker id="arH" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 z" fill="var(--hazard)"/>
+          </marker>
+        </defs>
+
+        <!-- slow lane -->
+        <rect x="14" y="20" width="700" height="120" rx="3" fill="var(--drainage-soft)" opacity=".5"/>
+        <text x="28" y="42" class="d-label" fill="var(--drainage)">Slow clock · baked once · offline</text>
+
+        <g fill="var(--card)" stroke="var(--rule)">
+          <rect x="28" y="56" width="128" height="62" rx="3"/>
+          <rect x="196" y="56" width="128" height="62" rx="3"/>
+          <rect x="364" y="56" width="128" height="62" rx="3"/>
+          <rect x="532" y="56" width="152" height="62" rx="3"/>
+        </g>
+        <text x="92" y="82" class="d-node" fill="var(--ink)" text-anchor="middle">Satellite DEM</text>
+        <text x="92" y="99" class="d-sub" fill="var(--ink-3)" text-anchor="middle">Copernicus 30 m</text>
+        <text x="260" y="82" class="d-node" fill="var(--ink)" text-anchor="middle">HAND + flow</text>
+        <text x="260" y="99" class="d-sub" fill="var(--ink-3)" text-anchor="middle">drainage network</text>
+        <text x="428" y="82" class="d-node" fill="var(--ink)" text-anchor="middle">5 hazards</text>
+        <text x="428" y="99" class="d-sub" fill="var(--ink-3)" text-anchor="middle">× 3 return periods</text>
+        <text x="608" y="80" class="d-node" fill="var(--hazard)" text-anchor="middle">RED ZONES</text>
+        <text x="608" y="99" class="d-sub" fill="var(--ink-3)" text-anchor="middle">+ ranked habitations</text>
+
+        <g stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#ar)" fill="none">
+          <path d="M158,87 L192,87"/><path d="M326,87 L360,87"/><path d="M494,87 L528,87"/>
+        </g>
+
+        <!-- fast lane -->
+        <rect x="14" y="188" width="700" height="120" rx="3" fill="var(--hazard-soft)" opacity=".45"/>
+        <text x="28" y="210" class="d-label" fill="var(--hazard)">Fast clock · every 30 minutes · live</text>
+
+        <g fill="var(--card)" stroke="var(--rule)">
+          <rect x="28" y="224" width="128" height="62" rx="3"/>
+          <rect x="196" y="224" width="128" height="62" rx="3"/>
+          <rect x="364" y="224" width="320" height="62" rx="3"/>
+        </g>
+        <text x="92" y="250" class="d-node" fill="var(--ink)" text-anchor="middle">Open-Meteo</text>
+        <text x="92" y="267" class="d-sub" fill="var(--ink-3)" text-anchor="middle">no API key</text>
+        <text x="260" y="250" class="d-node" fill="var(--ink)" text-anchor="middle">532 squares</text>
+        <text x="260" y="267" class="d-sub" fill="var(--ink-3)" text-anchor="middle">cheap national screen</text>
+        <text x="524" y="248" class="d-node" fill="var(--ink)" text-anchor="middle">cloud column · rain · soil · river</text>
+        <text x="524" y="267" class="d-sub" fill="var(--ink-3)" text-anchor="middle">only where the screen fires — 22 districts</text>
+
+        <g stroke="var(--ink-3)" stroke-width="1.4" marker-end="url(#ar)" fill="none">
+          <path d="M158,255 L192,255"/><path d="M326,255 L360,255"/>
+        </g>
+
+        <!-- the board -->
+        <rect x="742" y="120" width="142" height="96" rx="3" fill="var(--hazard)"/>
+        <text x="813" y="158" class="d-node" fill="var(--card)" text-anchor="middle" style="font-size:14px">LIVE BOARD</text>
+        <text x="813" y="177" class="d-sub" fill="var(--card)" text-anchor="middle" opacity=".85">who needs attention</text>
+        <text x="813" y="192" class="d-sub" fill="var(--card)" text-anchor="middle" opacity=".85">today</text>
+
+        <g stroke="var(--hazard)" stroke-width="1.6" marker-end="url(#arH)" fill="none">
+          <path d="M684,95 C716,95 716,150 738,150"/>
+          <path d="M684,255 C716,255 716,190 738,190"/>
+        </g>
+
+        <text x="700" y="352" class="d-label" fill="var(--ink-3)" text-anchor="middle">weather × standing exposure = priority</text>
+        <line x1="300" y1="346" x2="560" y2="346" stroke="var(--rule)" stroke-width="1"/>
+      </svg>
+      <figcaption>
+        The screen–then–model pattern is the cost control. A full district assessment costs
+        seconds; running it continuously for 735 districts is impossible at any sane budget. So
+        the cheap grid runs everywhere, and the expensive physics is spent only where the grid
+        fires.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ============ PIPELINE ============ -->
+  <section>
+    <p class="eyebrow">The workflow, stage by stage</p>
+    <h2>From a satellite pixel to “move these 7 villages”</h2>
+    <p class="lede">
+      Six stages on the slow clock, one lane on the fast clock. Each stage names what goes
+      <em>in</em>, what it <em>does</em>, and what comes <em>out</em> — so any step can be
+      checked rather than believed.
+    </p>
+
+    <div class="stage">
+      <div class="num">1</div>
+      <div>
+        <div class="stage-hd">
+          <h3>Read the land</h3>
+          <span class="tag">core/terrain.py</span>
+        </div>
+        <p class="plain">
+          Water goes downhill. Before you can say anything about floods you need to know, for
+          every 30-metre square of the district, how far above the nearest stream it sits.
+        </p>
+        <div class="io">
+          <div class="io-row"><div class="io-k">In</div><div class="io-v">Copernicus DEM GLO-30 — free 30 m satellite elevation, no account needed</div></div>
+          <div class="io-row"><div class="io-k">Does</div><div class="io-v">Fills sinks <code>Wang &amp; Liu 2006</code> → resolves flats <code>Garbrecht &amp; Martz 1997</code> → routes flow <code>D8</code> → computes <code>HAND</code>, <code>TWI</code> and slope</div></div>
+          <div class="io-row"><div class="io-k">Out</div><div class="io-v">Height above nearest drainage, flow direction and steepness for every cell</div></div>
+        </div>
+        <div class="why">
+          <b>Why it matters:</b> HAND is the translator of the whole system. It turns “the river
+          is 2 m above normal” into “<em>these</em> houses are underwater.” Verified clean:
+          <b>zero interior pits across all 22 districts</b> — the drainage network actually drains.
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="num">2</div>
+      <div>
+        <div class="stage-hd">
+          <h3>Make it rain, and route the water</h3>
+          <span class="tag">core/rainfall.py → hydrology.py</span>
+        </div>
+        <p class="plain">
+          Rain falls. Some soaks in, the rest runs off, collects in channels and raises the
+          river. This stage does that arithmetic properly instead of guessing.
+        </p>
+        <div class="io">
+          <div class="io-row"><div class="io-k">In</div><div class="io-v">Either a <b>design storm</b> (5-, 25- or 100-year) or <b>live Open-Meteo</b> observed + forecast rainfall</div></div>
+          <div class="io-row"><div class="io-k">Does</div><div class="io-v">Runoff via <code>SCS Curve Number</code> → routing via unit hydrograph → river stage via <code>Manning</code> compound channel, solved by bisection</div></div>
+          <div class="io-row"><div class="io-k">Out</div><div class="io-v">River stage in metres, hour by hour — then flood depth via HAND</div></div>
+        </div>
+        <div class="why">
+          <b>The key design decision:</b> the seam between “demo” and “live” sits <em>here</em>, at
+          the rainfall object. Swap a design storm for a live forecast and every downstream stage
+          runs unchanged. Live mode is not a second codebase — it is <b>the same physics on
+          different rain</b>.
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="num">3</div>
+      <div>
+        <div class="stage-hd">
+          <h3>Draw each hazard</h3>
+          <span class="tag">flood · landslide · waterlogging · erosion · cloudburst</span>
+        </div>
+        <p class="plain">
+          The problem statement names four hazards. Each gets its own module and its own
+          published method — no single blended “risk score” hiding what actually threatens a place.
+        </p>
+        <div class="io">
+          <div class="io-row"><div class="io-k">Flood</div><div class="io-v">HAND compared against the routed river stage</div></div>
+          <div class="io-row"><div class="io-k">Landslide</div><div class="io-v"><code>BIS IS 14496 (Part 2)</code> — the Indian national standard — plus the <code>Caine 1980</code> rainfall intensity–duration threshold</div></div>
+          <div class="io-row"><div class="io-k">Waterlogging</div><div class="io-v">Topographic wetness index and drainage capacity</div></div>
+          <div class="io-row"><div class="io-k">Erosion</div><div class="io-v">Shoreline retreat via <code>Bruun 1962</code></div></div>
+          <div class="io-row"><div class="io-k">Cloudburst</div><div class="io-v">IMD's own definition — ≥100 mm in one hour — over steep, flashy catchments</div></div>
+        </div>
+        <div class="why">
+          <b>Why a national standard matters:</b> the landslide rating is <b>BIS IS 14496</b>, not
+          an invented index. A state engineer already knows it, can already audit it, and already
+          has procedure attached to it. That is worth more than a cleverer number nobody can check.
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="num">4</div>
+      <div>
+        <div class="stage-hd">
+          <h3>Find the red zones</h3>
+          <span class="tag">core/redzone.py</span>
+        </div>
+        <p class="plain">
+          A place that floods once in a century is a place you protect. A place that floods every
+          five years is a place people should not be living. <strong>The difference between those
+          two is the entire product.</strong>
+        </p>
+        <div class="io">
+          <div class="io-row"><div class="io-k">In</div><div class="io-v">All five hazard layers, each run at 5-, 25- and 100-year severity</div></div>
+          <div class="io-row"><div class="io-k">Does</div><div class="io-v">Derives a <b>recurrence interval</b> per cell — how often it gets hit — then applies unsuitability thresholds</div></div>
+          <div class="io-row"><div class="io-k">Out</div><div class="io-v">Red zone map + years-between-hits, per cell, per hazard</div></div>
+        </div>
+        <div class="why">
+          <b>This is the PS phrase made literal.</b> “Unsuitable for permanent habitation” is not a
+          vibe — it is a recurrence threshold, published in the code, that anyone can argue with.
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="num">5</div>
+      <div>
+        <div class="stage-hd">
+          <h3>Count the people — and how exposed they are</h3>
+          <span class="tag">core/exposure.py + data/vulnerability.py</span>
+        </div>
+        <p class="plain">
+          Two settlements. Same headcount, same flood depth. One is concrete and literate and
+          connected; one is not. They must not rank equally — that word “vulnerable” in the
+          problem statement's title has to mean something.
+        </p>
+        <div class="io">
+          <div class="io-row"><div class="io-k">In</div><div class="io-v">Population, built-up surface, roads and facilities inside each red zone</div></div>
+          <div class="io-row"><div class="io-k">Weights</div><div class="io-v">Census 2011 social indicators — literacy 0.35, SC/ST share 0.30, rural share 0.35</div></div>
+          <div class="io-row"><div class="io-k">Out</div><div class="io-v">Every habitation scored and ranked, with the weights <b>printed on screen</b></div></div>
+        </div>
+        <div class="why">
+          <b>Published weights, not a black box.</b> The priority score is
+          <code>0.34 exposure + 0.26 frequency + 0.16 unsuitability + 0.16 vulnerability + 0.08 area</code>.
+          A judge can disagree with a weight — which is the point. They cannot disagree with a
+          number they can't see.
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="num">6</div>
+      <div>
+        <div class="stage-hd">
+          <h3>Say what to do, and who does it</h3>
+          <span class="tag">core/relocation.py + mitigation.py</span>
+        </div>
+        <p class="plain">
+          Knowing a village is doomed is useless without somewhere to put it and someone with the
+          legal power to act.
+        </p>
+        <div class="io">
+          <div class="io-row"><div class="io-k">Where</div><div class="io-v">Relocation sites scored on six weighted components, each with a <b>carrying capacity</b> — how many families it can actually hold</div></div>
+          <div class="io-row"><div class="io-k">When</div><div class="io-v">Immediate / short-term / medium-term horizon per habitation</div></div>
+          <div class="io-row"><div class="io-k">What</div><div class="io-v">Strategy chosen by comparing hazard recurrence against a <b>25-year protection design life</b>: protect it, regulate it, or move it</div></div>
+          <div class="io-row"><div class="io-k">Who</div><div class="io-v"><b>20 named authorities</b>, <b>15 legal instruments</b> — DM Act ss. 30/31/38, RFCTLARR 2013, CRZ 2019, PMAY-G — and the standing SOPs</div></div>
+        </div>
+        <div class="why">
+          <b>The line that closes the pitch:</b> if a hazard returns faster than a structure's
+          design life, you are not protecting that village — you are rebuilding a wall it will
+          outlive. That comparison is what turns this from a map into a decision.
+        </div>
+      </div>
+    </div>
+
+    <div class="stage live">
+      <div class="num">L</div>
+      <div>
+        <div class="stage-hd">
+          <h3>The live lane — reading the sky</h3>
+          <span class="tag">core/cloudwatch.py → watch.py</span>
+        </div>
+        <p class="plain">
+          Running in parallel, continuously. This is what puts a district on the board this
+          morning rather than in a report next year.
+        </p>
+        <div class="io">
+          <div class="io-row"><div class="io-k">Screen</div><div class="io-v">532 squares over India scored on rainfall, convective energy and soil moisture</div></div>
+          <div class="io-row"><div class="io-k">Then</div><div class="io-v">Where a square fires, the 22 modelled districts get the full read: cloud column, rainfall vs IMD bands, soil saturation, modelled river response</div></div>
+          <div class="io-row"><div class="io-k">Rank by</div><div class="io-v">Live weather <b>×</b> standing exposure — the two clocks multiplied together</div></div>
+        </div>
+        <div class="why">
+          <b>Also replays history.</b> The same board can be run for Wayanad on 30 July 2024, or
+          the Assam floods of 2022 and 2020 — showing what DRISHTI would have said the morning
+          before. That is the demo that lands.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CLOUD PATTERNS ============ -->
+  <section>
+    <p class="eyebrow">The defensible centrepiece</p>
+    <h2>Cloud patterns, read — not predicted by a black box</h2>
+    <p class="lede">
+      There is <strong>no machine learning in the decision path</strong>, and that is a choice, not
+      a shortcut. A model that predicts rainfall is a model that has to be <em>believed</em>.
+      DRISHTI reads the <strong>vertical structure of the cloud column</strong> against textbook
+      convective meteorology and reports what it sees — every step checkable by a meteorologist
+      in the room.
+    </p>
+
+    <div class="io" style="max-width:var(--read)">
+      <div class="io-row"><div class="io-k">Low/mid/high</div><div class="io-v">Deep convection fills all three levels at once. Ordinary monsoon rain sits low and leaves the high level clear.</div></div>
+      <div class="io-row"><div class="io-k">High ≫ low</div><div class="io-v">The <b>anvil signature</b> — cirrus outflow from a mature cumulonimbus. This is the cold-cloud shield IMD reads off INSAT.</div></div>
+      <div class="io-row"><div class="io-k">CAPE</div><div class="io-v">Structure without energy is cloud. Structure <em>with</em> energy is a storm.</div></div>
+      <div class="io-row"><div class="io-k">Freezing level</div><div class="io-v">A high freezing level means a deep warm-cloud layer — the classic precondition behind Himalayan cloudbursts.</div></div>
+    </div>
+
+    <div class="states">
+      <div class="st s0"><span class="lv">Quiet</span><p>Nothing organising.</p></div>
+      <div class="st s1"><span class="lv">Building</span><p>Column deepening, energy accumulating.</p></div>
+      <div class="st s2"><span class="lv">Deep convection</span><p>Troposphere-spanning column with CAPE behind it.</p></div>
+      <div class="st s3"><span class="lv">Mature system</span><p>Anvil spreading. The sky has already committed.</p></div>
+    </div>
+
+    <div class="why" style="max-width:none;margin-top:24px">
+      <b>And the anomaly is the point.</b> A deep column over Cherrapunji in July is a Tuesday. The
+      same column over Jaisalmer is not. Every reading is placed against <em>that location's own
+      five-year record for the same calendar week</em> — which is why the board does not fire every
+      day of the monsoon and get ignored by June. The rainfall forecast is reported
+      <em>alongside</em>, from the weather model, and never blended into a single invented number.
+    </div>
+  </section>
+
+  <!-- ============ PS ALIGNMENT ============ -->
+  <section>
+    <p class="eyebrow">Alignment</p>
+    <h2>Every clause of SIH26191, and where it is answered</h2>
+    <p class="lede">
+      The problem statement was broken into its individual requirement atoms and each one traced
+      to running code. <strong>Nothing here is aspirational</strong> — every row points at a module
+      that exists and is under test.
+    </p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:31%">What the PS asks for</th><th style="width:47%">How DRISHTI answers it</th><th style="width:22%">Where</th></tr>
+        </thead>
+        <tbody>
+          <tr class="grp"><td colspan="3">The title — red zones, carrying capacity, relocation, vulnerability</td></tr>
+          <tr>
+            <th>Hazard-based Red Zone identification</th>
+            <td>Five hazards, each at three return periods, reduced to a recurrence interval per cell and thresholded into red zones. <span class="ok">built</span></td>
+            <td><code>core/redzone.py</code></td>
+          </tr>
+          <tr>
+            <th>“Unsuitable for permanent habitation”</th>
+            <td>An explicit, published recurrence threshold — not a qualitative label. <span class="ok">built</span></td>
+            <td><code>UNINHABITABLE</code></td>
+          </tr>
+          <tr>
+            <th>Carrying capacity assessment</th>
+            <td>Candidate sites scored on six weighted components, each returning how many families it can actually absorb, plus district-level headroom. <span class="ok">built</span></td>
+            <td><code>relocation.find_sites()</code></td>
+          </tr>
+          <tr>
+            <th>Immediate relocation needs</th>
+            <td>Every habitation assigned immediate / short-term / medium-term. <span class="ok">built</span></td>
+            <td><code>HORIZONS</code></td>
+          </tr>
+          <tr>
+            <th>For <em>vulnerable</em> habitations</th>
+            <td>Census 2011 literacy, SC/ST share and rural share weighted into the priority score, so equal headcounts do not rank equally. <span class="ok">built</span></td>
+            <td><code>data/vulnerability.py</code></td>
+          </tr>
+
+          <tr class="grp"><td colspan="3">The four named hazards</td></tr>
+          <tr><th>Floods</th><td>HAND against a Manning-routed river stage. <span class="ok">built</span></td><td><code>core/flood.py</code></td></tr>
+          <tr><th>Landslides</th><td>BIS IS 14496 (Part 2) LHEF rating + Caine 1980 rainfall threshold + initiation zones. <span class="ok">built</span></td><td><code>core/landslide.py</code></td></tr>
+          <tr><th>Coastal erosion</th><td>Bruun 1962 shoreline retreat under sea-level rise. <span class="ok">built</span></td><td><code>core/erosion.py</code></td></tr>
+          <tr><th>Cloudbursts</th><td>IMD's ≥100 mm/hr definition over orographic lift × catchment flashiness, with runout paths. <span class="ok">built</span></td><td><code>core/cloudburst.py</code></td></tr>
+
+          <tr class="grp"><td colspan="3">The description — dynamic, integrated, evidence-based</td></tr>
+          <tr>
+            <th>Dynamically <em>identify</em> red zones</th>
+            <td>Zones are derived on demand from terrain + rainfall, not hand-drawn. <span class="ok">built</span></td>
+            <td><code>redzone.build()</code></td>
+          </tr>
+          <tr>
+            <th>Dynamically <em>update</em> red zones</th>
+            <td>GHSL multi-temporal satellite built-up detects new construction <em>inside</em> red zones since 2015 — naming where permits must stop. <span class="ok">built</span></td>
+            <td><code>core/encroachment.py</code></td>
+          </tr>
+          <tr>
+            <th>Integrate hazard intensity</th>
+            <td>Per-hazard intensity carried through to the ranking, never averaged away. <span class="ok">built</span></td>
+            <td><code>hazard_layers()</code></td>
+          </tr>
+          <tr>
+            <th>Integrate population vulnerability</th>
+            <td>Weighted at 0.16 of the priority score, from cited Census indicators. <span class="ok">built</span></td>
+            <td><code>priority_score</code></td>
+          </tr>
+          <tr>
+            <th>Integrate disaster history</th>
+            <td>41 cited events 1999–2024 + 328 IBTrACS cyclone tracks, and the red zones are <em>validated against them</em>. <span class="ok">built</span></td>
+            <td><code>core/history.py</code></td>
+          </tr>
+          <tr>
+            <th>Evidence-based</th>
+            <td>Every weight, threshold and method published in-app at <code>/api/methods</code>, with its citation. <span class="ok">built</span></td>
+            <td><code>data/methods.py</code></td>
+          </tr>
+          <tr>
+            <th>AI-driven</th>
+            <td>Two trained models (R² 0.77, F1 0.96) — used for national screening speed and deliberately kept <em>out</em> of the decision path. <span class="part">by design</span></td>
+            <td><code>core/ml.py</code></td>
+          </tr>
+          <tr>
+            <th>Real-time mapping and updates</th>
+            <td>Live weather every 30 min nationally; cloud, rainfall, soil and modelled river response per district. Satellite rasters are baked, not streamed. <span class="part">live weather</span></td>
+            <td><code>core/watch.py</code></td>
+          </tr>
+
+          <tr class="grp"><td colspan="3">The expected solution — a GIS decision-support system for SDMAs</td></tr>
+          <tr><th>GIS-enabled</th><td>Leaflet map, raster overlays served as PNG, clickable vector zones and boundaries. <span class="ok">built</span></td><td><code>core/render.py</code></td></tr>
+          <tr><th>Prioritise habitations</th><td>Ranked list with the score decomposition visible per row. <span class="ok">built</span></td><td><code>assess_habitations()</code></td></tr>
+          <tr><th>Suitability of alternative sites</th><td>Six-component suitability grid, published weights. <span class="ok">built</span></td><td><code>suitability_grid()</code></td></tr>
+          <tr><th>Actionable insights</th><td>Strategy family, legal instrument, cost estimate, named authority and standing SOP per habitation. <span class="ok">built</span></td><td><code>core/mitigation.py</code></td></tr>
+          <tr><th>Delivered to State authorities</th><td>State rollup screen — red-zone area, caseload by horizon, districts ranked by need, budget range. <span class="ok">built</span></td><td><code>core/state_view.py</code></td></tr>
+          <tr><th>Output must leave the screen</th><td>CSV export of the ranked habitation list, plus a printable state summary. <span class="ok">built</span></td><td><code>/api/export/…</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ TIERS ============ -->
+  <section>
+    <p class="eyebrow">Coverage</p>
+    <h2>All 735 districts — with the difference stated on every record</h2>
+    <p class="lede">
+      A national map where a weather-only score looks identical to a fully modelled one would be
+      the most misleading thing this system could produce. So it cannot happen:
+      <strong>every district record carries its tier and a sentence saying what stands behind the
+      number.</strong>
+    </p>
+    <div class="tiers">
+      <div class="tier m">
+        <span class="lv">Modelled</span>
+        <span class="n">22 districts</span>
+        <p>Full physics — HAND inundation, D8 routing, BIS landslide rating, recurrence across
+           three return periods, exposure and relocation caseload.</p>
+      </div>
+      <div class="tier s">
+        <span class="lv">Screening</span>
+        <span class="n">713 districts</span>
+        <p>Live weather aggregated from the national grid, with <b>no terrain analysis behind
+           it</b>. Says where to look. Is not a hazard assessment, and says so.</p>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:20px">
+      Promotion between tiers is a <strong>data task, not a code change</strong>: bake a district's
+      elevation and it moves up. That is the honest answer to “does this scale?” — the pipeline
+      already handles all 735; what the other 713 are waiting on is disk, not development.
+    </p>
+  </section>
+
+  <!-- ============ HONESTY ============ -->
+  <section>
+    <p class="eyebrow">Ask us the hard question first</p>
+    <h2>What DRISHTI does not claim</h2>
+    <p class="lede">
+      Every limitation below is stated in the running application, not just in this document. This
+      section exists because the fastest way to lose a technical panel is to be caught overselling
+      one number.
+    </p>
+    <div class="honest">
+      <ul>
+        <li>
+          <b>River stage is modelled, never gauged.</b> There is no public, documented, keyless
+          CWC feed — three routes were tried and are written up in the code. Stage is routed from
+          live rainfall through real terrain, and every response says so. A modelled stage shown as
+          a gauge reading would be a lie with a decimal point on it.
+        </li>
+        <li>
+          <b>Cloud reading is not a rainfall forecast.</b> It says the sky is organising and how
+          fast. It is never blended with the precipitation forecast into one invented number.
+        </li>
+        <li>
+          <b>Return periods are exceedance bands, not fitted curves.</b> A five-year daily archive
+          holds five annual maxima — far too few for extreme-value fitting. Quoting “a 1-in-80-year
+          storm” from it would be fabrication with a decimal point on it.
+        </li>
+        <li>
+          <b>The disaster register and Census indicators are curated, not live.</b> No free API
+          carries Indian flood history. Every row therefore carries its citation and source URL,
+          visible in the app.
+        </li>
+        <li>
+          <b>Satellite rasters are baked, not streamed.</b> Elevation and built-up surface are
+          fetched once and shipped. This is what makes the app work with the network unplugged —
+          a deliberate trade, not an omission.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <span>DRISHTI · District Risk Intelligence &amp; Satellite Hazard Tracking Interface</span>
+    <span>SIH26191 · Ministry of Home Affairs / NDRF, DM Division</span>
+    <span>29 modules · 13,095 lines · 308 tests passing · 0 API keys</span>
+    <span>Sources: Copernicus DEM GLO-30 · Open-Meteo · GHSL R2023A · IBTrACS · geoBoundaries · Census 2011 · BIS IS 14496 · IMD</span>
+  </footer>
+
+</div>

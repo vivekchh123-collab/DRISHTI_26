@@ -1,0 +1,83 @@
+{
+  "name": "drishti",
+  "productName": "DRISHTI",
+  "version": "1.0.0",
+  "description": "Multi-hazard Red Zones and relocation planning for State Disaster Management Authorities",
+  "main": "main.js",
+  "author": "DRISHTI",
+  "license": "Apache-2.0",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --publish never",
+    "dir": "electron-builder --dir --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "in.drishti.desktop",
+    "productName": "DRISHTI",
+    "copyright": "Apache-2.0",
+    "directories": {
+      "output": "../dist/installer",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "afterPack.js",
+      "package.json",
+      "build/icon.png",
+      "build/icon.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "../dist/drishti-server",
+        "to": "server",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "DRISHTI-Setup-${version}.${ext}",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DRISHTI",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "differentialPackage": false
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Science",
+      "icon": "build/icon.png"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.education",
+      "icon": "build/icon.png"
+    },
+    "afterPack": "./afterPack.js"
+  }
+}

@@ -1,0 +1,126 @@
+/* ==========================================================================
+   DRISHTI design tokens
+
+   The product is an operations instrument, not a marketing page. Information
+   density is the goal; ornament is not. Two rules govern everything below.
+
+   1. Semantic colour is separate from the accent. Severity uses IMD's own
+      green / yellow / orange / red warning code, which every Indian disaster
+      management officer already reads fluently. The accent is a single water
+      blue and never carries meaning about severity.
+
+   2. One sequential ramp for depth, used identically in the map, the legend and
+      the tables, so a given blue always means the same number of metres.
+
+   Dark-first, because the screen this is designed for is in a district
+   emergency operations centre at two in the morning. A light theme is provided
+   for daylight and for printing.
+   ========================================================================== */
+
+/* --- fonts: vendored, so the app is typographically complete offline ------ */
+@font-face { font-family: "Plex Sans"; src: url("../vendor/fonts/ibm-plex-sans-400.woff2") format("woff2");
+             font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Plex Sans"; src: url("../vendor/fonts/ibm-plex-sans-500.woff2") format("woff2");
+             font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Plex Sans"; src: url("../vendor/fonts/ibm-plex-sans-600.woff2") format("woff2");
+             font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Plex Cond"; src: url("../vendor/fonts/ibm-plex-sans-condensed-600.woff2") format("woff2");
+             font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Plex Cond"; src: url("../vendor/fonts/ibm-plex-sans-condensed-700.woff2") format("woff2");
+             font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Plex Mono"; src: url("../vendor/fonts/ibm-plex-mono-400.woff2") format("woff2");
+             font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Plex Mono"; src: url("../vendor/fonts/ibm-plex-mono-500.woff2") format("woff2");
+             font-weight: 500; font-style: normal; font-display: swap; }
+
+:root {
+  /* --- type ------------------------------------------------------------- */
+  --font-sans: "Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-cond: "Plex Cond", "Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --t-xs:   11px;
+  --t-sm:   12.5px;
+  --t-base: 13.5px;
+  --t-md:   15px;
+  --t-lg:   18px;
+  --t-xl:   23px;
+  --t-2xl:  31px;
+  --t-3xl:  42px;
+
+  /* --- spacing: a strict 4/8 grid; no ad-hoc values anywhere ------------- */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px;
+
+  --radius: 3px;
+  --radius-lg: 5px;
+  --border: 1px solid var(--line);
+
+  /* --- dark palette (default) ------------------------------------------- */
+  --bg:        #0A1017;
+  --surface-1: #101A24;
+  --surface-2: #16222E;
+  --surface-3: #1D2C3A;
+  --line:      #223140;
+  --line-soft: #182430;
+
+  --text:      #E2EAF1;
+  --text-2:    #9DB0C1;
+  --text-3:    #677C8F;
+
+  --accent:    #4BA3D8;
+  --accent-2:  #7DC3EC;
+  --accent-bg: #0F2839;
+
+  /* IMD warning code — semantic severity, never decoration */
+  --ok:        #3FA86B;
+  --ok-bg:     #0D2419;
+  --watch:     #D8B33C;
+  --watch-bg:  #241E09;
+  --alert:     #E08A3C;
+  --alert-bg:  #2A1B0B;
+  --severe:    #DC5B4B;
+  --severe-bg: #2C1210;
+
+  /* flood depth ramp — the single sequential scale */
+  --d1: #CBE3F0; --d2: #8FC4E2; --d3: #4E9BC9;
+  --d4: #2A72A8; --d5: #164C7D; --d6: #0B2E52;
+
+  --shadow-1: 0 1px 2px rgba(0,0,0,.5);
+  --shadow-2: 0 8px 28px -12px rgba(0,0,0,.75);
+
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --dur: 140ms;
+}
+
+:root[data-theme="light"] {
+  --bg:        #EEF2F5;
+  --surface-1: #FFFFFF;
+  --surface-2: #F5F8FA;
+  --surface-3: #E7EDF2;
+  --line:      #CBD8E2;
+  --line-soft: #DEE7ED;
+
+  --text:      #0D1720;
+  --text-2:    #47606F;
+  --text-3:    #74889A;
+
+  --accent:    #0B5C8C;
+  --accent-2:  #08405F;
+  --accent-bg: #DCEAF4;
+
+  --ok:        #1F7A4C; --ok-bg:     #DCF0E5;
+  --watch:     #8A6A12; --watch-bg:  #F7EED2;
+  --alert:     #9A5316; --alert-bg:  #F9E7D4;
+  --severe:    #A72E22; --severe-bg: #F8DDD9;
+
+  --shadow-1: 0 1px 2px rgba(13,23,32,.07);
+  --shadow-2: 0 8px 28px -14px rgba(13,23,32,.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

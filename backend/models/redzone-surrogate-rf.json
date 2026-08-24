@@ -1,0 +1,87 @@
+{
+  "model": "redzone-surrogate-rf",
+  "task": "regression: red-zone unsuitability, 0-1",
+  "metrics": {
+    "r2": 0.772,
+    "mae": 0.0606
+  },
+  "baseline": {
+    "r2": -0.0094,
+    "mae": 0.2635
+  },
+  "improvement": {
+    "r2": 0.7814,
+    "mae": 0.2029
+  },
+  "feature_importance": [
+    {
+      "feature": "hand",
+      "importance": 0.7179
+    },
+    {
+      "feature": "slope",
+      "importance": 0.0573
+    },
+    {
+      "feature": "urban_fraction",
+      "importance": 0.0535
+    },
+    {
+      "feature": "drainage_density",
+      "importance": 0.0412
+    },
+    {
+      "feature": "elev_rel",
+      "importance": 0.038
+    },
+    {
+      "feature": "dist_to_stream",
+      "importance": 0.023
+    },
+    {
+      "feature": "relief",
+      "importance": 0.0156
+    },
+    {
+      "feature": "built_up",
+      "importance": 0.0149
+    },
+    {
+      "feature": "twi",
+      "importance": 0.0099
+    },
+    {
+      "feature": "rainfall_normal_mm",
+      "importance": 0.0097
+    },
+    {
+      "feature": "accum_log",
+      "importance": 0.0073
+    },
+    {
+      "feature": "curvature",
+      "importance": 0.0067
+    },
+    {
+      "feature": "cropland",
+      "importance": 0.0052
+    }
+  ],
+  "samples_train": 107679,
+  "samples_test": 24093,
+  "held_out_districts": [
+    "BR-SIT",
+    "HP-MAN",
+    "OD-BAL",
+    "TN-CHN"
+  ],
+  "train_seconds": 121.74,
+  "validation": "Split by district, not at random. Neighbouring cells are autocorrelated, so a random split trains on a cell's own neighbours and reports an accuracy that means nothing.",
+  "notes": [
+    "Target is the physics model's own output. The surrogate exists to run nationally at speed, not to replace the physics \u2014 where it fires, the full model is run.",
+    "MAE is the number to read. It is the average error in an index that runs 0 to 1."
+  ],
+  "lower_is_better": [
+    "mae"
+  ]
+}

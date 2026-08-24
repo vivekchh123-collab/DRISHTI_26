@@ -1,0 +1,785 @@
+<title>DRISHTI Flood Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;450;500;600&display=swap">
+
+<style>
+/* ── tokens: light is the base set ───────────────────────────────── */
+:root{
+  --ground:#E8EDF1; --surface:#FFFFFF; --surface-2:#F1F5F8; --surface-3:#E1E9EF;
+  --line:#C4D1DB; --line-soft:#DBE4EB;
+  --ink:#0E1A24; --ink-2:#3C5062; --ink-3:#6A7E90;
+  --accent:#0B5C8C; --accent-2:#08405F; --accent-wash:#DBEAF4;
+  --critical:#A3221A; --critical-wash:#F6DEDB;
+  --warning:#8F5200; --warning-wash:#F8E8D2;
+  --ok:#0A6B45; --ok-wash:#D8EFE4;
+  --d1:#CBE3F0; --d2:#8FC4E2; --d3:#4E9BC9; --d4:#2A72A8; --d5:#164C7D; --d6:#0B2E52;
+  --shadow:0 1px 2px rgba(14,26,36,.06), 0 8px 24px -12px rgba(14,26,36,.14);
+  --terrain:#C3CDD4; --terrain-line:#8D9CA8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#070C12; --surface:#0F1821; --surface-2:#151F2A; --surface-3:#1B2husky;
+    --surface-3:#1B2733;
+    --line:#25323E; --line-soft:#1A2531;
+    --ink:#DEE8EF; --ink-2:#9BAEBE; --ink-3:#6C8194;
+    --accent:#5AAEDD; --accent-2:#8CCBEE; --accent-wash:#11293A;
+    --critical:#E8877A; --critical-wash:#301715;
+    --warning:#DDA24F; --warning-wash:#2B1F0E;
+    --ok:#4FBF8E; --ok-wash:#0D2620;
+    --d1:#12314A; --d2:#1A4A70; --d3:#2A72A8; --d4:#4E9BC9; --d5:#8FC4E2; --d6:#CBE3F0;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+    --terrain:#243039; --terrain-line:#3C4C59;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#070C12; --surface:#0F1821; --surface-2:#151F2A; --surface-3:#1B2733;
+  --line:#25323E; --line-soft:#1A2531;
+  --ink:#DEE8EF; --ink-2:#9BAEBE; --ink-3:#6C8194;
+  --accent:#5AAEDD; --accent-2:#8CCBEE; --accent-wash:#11293A;
+  --critical:#E8877A; --critical-wash:#301715;
+  --warning:#DDA24F; --warning-wash:#2B1F0E;
+  --ok:#4FBF8E; --ok-wash:#0D2620;
+  --d1:#12314A; --d2:#1A4A70; --d3:#2A72A8; --d4:#4E9BC9; --d5:#8FC4E2; --d6:#CBE3F0;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+  --terrain:#243039; --terrain-line:#3C4C59;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  font-size:16.5px; line-height:1.62; font-weight:400;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  font-weight:700; line-height:1.14; text-wrap:balance; margin:0; letter-spacing:-.01em}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* ── shell: chart-margin rule down the left ──────────────────────── */
+.wrap{max-width:1180px; margin:0 auto; padding:0 28px}
+.col{max-width:68ch}
+main{position:relative}
+section{padding:64px 0; border-top:1px solid var(--line-soft)}
+section:first-of-type{border-top:0}
+
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:500;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+  display:flex; align-items:center; gap:10px; margin-bottom:18px;
+}
+.eyebrow::after{content:""; flex:1; height:1px; background:var(--line); max-width:120px}
+h2{font-size:clamp(28px,3.6vw,40px); margin-bottom:14px}
+h3{font-size:20px; margin-bottom:8px; letter-spacing:0}
+.lede{font-size:19px; color:var(--ink-2); line-height:1.6}
+p{margin:0 0 16px}
+strong{font-weight:600; color:var(--ink)}
+a{color:var(--accent); text-decoration-thickness:1px; text-underline-offset:3px}
+
+/* ── hero ────────────────────────────────────────────────────────── */
+.hero{padding:72px 0 56px; border-top:0}
+.ramp{display:flex; height:5px; width:100%; margin-bottom:40px; border-radius:1px; overflow:hidden}
+.ramp i{flex:1}
+.wordmark{
+  font-family:"IBM Plex Sans Condensed",sans-serif; font-weight:700;
+  font-size:clamp(58px,11vw,124px); line-height:.9; letter-spacing:-.035em;
+  margin:0 0 6px;
+}
+.expand{font-family:"IBM Plex Mono",monospace; font-size:12.5px; letter-spacing:.08em;
+  color:var(--ink-3); text-transform:uppercase; margin-bottom:30px}
+.thesis{font-size:clamp(22px,2.7vw,30px); line-height:1.32; font-weight:450;
+  color:var(--ink); max-width:20ch; font-family:"IBM Plex Sans Condensed",sans-serif;
+  font-weight:600; letter-spacing:-.015em}
+.thesis em{font-style:normal; color:var(--accent)}
+.hero-meta{display:flex; flex-wrap:wrap; gap:8px; margin-top:28px}
+.chip{
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.06em;
+  padding:5px 11px; border:1px solid var(--line); border-radius:2px;
+  color:var(--ink-2); background:var(--surface); text-transform:uppercase;
+}
+
+/* ── the instrument ──────────────────────────────────────────────── */
+.instrument{
+  margin-top:52px; background:var(--surface); border:1px solid var(--line);
+  border-radius:3px; box-shadow:var(--shadow); overflow:hidden;
+}
+.inst-head{
+  display:flex; flex-wrap:wrap; gap:14px; align-items:baseline;
+  justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--line-soft);
+  background:var(--surface-2);
+}
+.inst-title{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-2); font-weight:500}
+.inst-hint{font-size:13.5px; color:var(--ink-3)}
+canvas{display:block; width:100%; height:auto}
+.inst-ctl{padding:18px 20px 20px; border-top:1px solid var(--line-soft);
+  display:grid; grid-template-columns:1fr; gap:16px}
+@media(min-width:720px){.inst-ctl{grid-template-columns:1.6fr 1fr; align-items:center}}
+.slider-row{display:flex; flex-direction:column; gap:7px}
+.slider-lab{display:flex; justify-content:space-between; align-items:baseline;
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--ink-3)}
+.slider-val{font-size:15px; color:var(--accent); font-weight:600; font-variant-numeric:tabular-nums}
+input[type=range]{
+  -webkit-appearance:none; appearance:none; width:100%; height:22px; background:transparent;
+  cursor:grab; margin:0;
+}
+input[type=range]:active{cursor:grabbing}
+input[type=range]::-webkit-slider-runnable-track{height:4px; background:var(--surface-3);
+  border-radius:2px; border:1px solid var(--line-soft)}
+input[type=range]::-moz-range-track{height:4px; background:var(--surface-3);
+  border-radius:2px; border:1px solid var(--line-soft)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:16px; height:16px;
+  border-radius:50%; background:var(--accent); border:2px solid var(--surface);
+  box-shadow:0 0 0 1px var(--accent); margin-top:-7px}
+input[type=range]::-moz-range-thumb{width:14px; height:14px; border-radius:50%;
+  background:var(--accent); border:2px solid var(--surface); box-shadow:0 0 0 1px var(--accent)}
+input[type=range]:focus-visible{outline:2px solid var(--accent); outline-offset:4px; border-radius:3px}
+.readout{display:flex; gap:22px}
+.ro{display:flex; flex-direction:column; gap:2px}
+.ro-k{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3)}
+.ro-v{font-family:"IBM Plex Sans Condensed",sans-serif; font-weight:700; font-size:26px;
+  font-variant-numeric:tabular-nums; line-height:1.1}
+.ro-v.alarm{color:var(--critical)}
+
+/* ── generic blocks ──────────────────────────────────────────────── */
+.grid2{display:grid; gap:22px; grid-template-columns:1fr}
+@media(min-width:760px){.grid2{grid-template-columns:1fr 1fr; gap:28px}}
+.grid3{display:grid; gap:18px; grid-template-columns:1fr}
+@media(min-width:760px){.grid3{grid-template-columns:repeat(3,1fr)}}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:3px; padding:22px}
+.card h3{margin-bottom:6px}
+.card p:last-child{margin-bottom:0}
+
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:3px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:15px}
+th,td{text-align:left; padding:12px 16px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+thead th{
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); font-weight:500;
+  background:var(--surface-2); white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums; white-space:nowrap}
+.cite{font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--ink-2); white-space:nowrap}
+
+/* ── pipeline: a real sequence, so it is numbered ────────────────── */
+.pipe{display:flex; flex-direction:column; gap:0; margin-top:8px}
+.stage{display:grid; grid-template-columns:auto 1fr; gap:18px; padding:14px 0;
+  border-bottom:1px solid var(--line-soft)}
+.stage:last-child{border-bottom:0}
+.stage-n{
+  font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--accent);
+  width:30px; padding-top:3px; font-variant-numeric:tabular-nums;
+}
+.stage-b h4{font-size:15.5px; letter-spacing:.04em; text-transform:uppercase;
+  font-family:"IBM Plex Mono",monospace; font-weight:600; margin-bottom:3px}
+.stage-b p{margin:0; color:var(--ink-2); font-size:15.5px}
+.band{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10.5px;
+  letter-spacing:.08em; padding:2px 7px; border-radius:2px; text-transform:uppercase;
+  margin-left:8px; vertical-align:1px}
+.band.a{background:var(--accent-wash); color:var(--accent)}
+.band.ok{background:var(--ok-wash); color:var(--ok)}
+/* One identified data source is not yet obtainable. It carries its own band
+   rather than being quietly dropped from the diagram. */
+.band.gap{background:var(--warning-wash); color:var(--warning)}
+
+/* ── dashboard mock ──────────────────────────────────────────────── */
+.mock{border:1px solid var(--line); border-radius:3px; overflow:hidden;
+  background:var(--surface); box-shadow:var(--shadow)}
+.mock-bar{display:flex; justify-content:space-between; align-items:center; gap:12px;
+  padding:11px 16px; background:var(--surface-2); border-bottom:1px solid var(--line-soft);
+  font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.06em}
+.badge{display:inline-flex; align-items:center; gap:6px; padding:3px 9px; border-radius:2px;
+  background:var(--ok-wash); color:var(--ok); font-size:11px; letter-spacing:.08em; font-weight:500}
+.badge::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor}
+.mock-body{display:grid; grid-template-columns:1fr; gap:0}
+@media(min-width:820px){.mock-body{grid-template-columns:1.35fr 1fr}}
+.mock-map{min-height:280px; position:relative; border-right:1px solid var(--line-soft);
+  background:
+    repeating-linear-gradient(0deg,transparent 0 27px,var(--line-soft) 27px 28px),
+    repeating-linear-gradient(90deg,transparent 0 27px,var(--line-soft) 27px 28px),
+    var(--surface-2);
+  display:flex; align-items:center; justify-content:center;
+}
+.mock-blob{
+  width:70%; height:62%;
+  background:radial-gradient(ellipse 60% 44% at 42% 52%,var(--d5) 0%,var(--d4) 34%,var(--d3) 58%,var(--d2) 76%,transparent 88%);
+  filter:blur(.4px);
+}
+.mock-side{display:flex; flex-direction:column}
+.mock-sec{padding:14px 16px; border-bottom:1px solid var(--line-soft)}
+.mock-sec:last-child{border-bottom:0; flex:1}
+.mock-h{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:10px}
+.zone{display:flex; gap:11px; align-items:baseline; padding:7px 0; border-bottom:1px dotted var(--line)}
+.zone:last-child{border-bottom:0}
+.zone-r{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-3); width:14px}
+.zone-n{font-weight:600; font-size:14.5px; width:74px}
+.zone-m{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2);
+  font-variant-numeric:tabular-nums; flex:1}
+.tag{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.06em;
+  padding:2px 6px; border-radius:2px; background:var(--critical-wash); color:var(--critical)}
+.act{display:flex; gap:9px; font-size:14.5px; padding:6px 0; color:var(--ink-2)}
+.act::before{content:"▸"; color:var(--accent); flex:none}
+.mock-time{padding:11px 16px; background:var(--surface-2); border-top:1px solid var(--line-soft);
+  display:flex; align-items:center; gap:12px}
+.track{flex:1; height:3px; background:var(--surface-3); border-radius:2px; position:relative}
+.track::after{content:""; position:absolute; left:44%; top:-4px; width:11px; height:11px;
+  border-radius:50%; background:var(--accent)}
+.track-lab{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-3);
+  letter-spacing:.08em; white-space:nowrap}
+
+/* ── cascade ─────────────────────────────────────────────────────── */
+.cascade{display:flex; flex-direction:column; gap:0; margin-top:6px}
+.casc{border:1px solid var(--line); border-radius:3px; padding:20px; background:var(--surface)}
+.casc.two{border-color:var(--accent); background:var(--accent-wash)}
+.casc-k{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:7px}
+.casc.two .casc-k{color:var(--accent)}
+.arrow{display:flex; align-items:center; gap:12px; padding:12px 20px;
+  font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-3); letter-spacing:.06em}
+.arrow::before{content:""; width:1px; height:26px; background:var(--line); margin-left:9px}
+
+/* ── limits / qa ─────────────────────────────────────────────────── */
+.limit{display:grid; grid-template-columns:auto 1fr; gap:14px; padding:12px 0;
+  border-bottom:1px solid var(--line-soft)}
+.limit:last-child{border-bottom:0}
+.limit-m{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--warning);
+  letter-spacing:.08em; padding-top:4px; white-space:nowrap}
+.limit p{margin:0; font-size:15.5px; color:var(--ink-2)}
+
+.qa{padding:18px 0; border-bottom:1px solid var(--line-soft)}
+.qa:last-child{border-bottom:0}
+.qa-q{font-family:"IBM Plex Sans Condensed",sans-serif; font-weight:700; font-size:19px;
+  margin-bottom:6px}
+.qa-a{color:var(--ink-2); margin:0; font-size:15.5px}
+
+/* ── roadmap ─────────────────────────────────────────────────────── */
+.phase{display:grid; grid-template-columns:auto 1fr auto; gap:16px; align-items:center;
+  padding:13px 0; border-bottom:1px solid var(--line-soft)}
+.phase:last-child{border-bottom:0}
+.bar{width:96px; height:6px; background:var(--surface-3); border-radius:1px; overflow:hidden}
+.bar i{display:block; height:100%; background:var(--accent)}
+.phase-n{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-3); width:56px}
+.phase-t strong{display:block; font-size:16px}
+.phase-t span{font-size:14px; color:var(--ink-3)}
+
+footer{padding:44px 0 60px; border-top:1px solid var(--line); color:var(--ink-3); font-size:14px}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+
+<main>
+<div class="wrap">
+
+<!-- ── HERO ──────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="ramp" aria-hidden="true">
+    <i style="background:var(--d1)"></i><i style="background:var(--d2)"></i>
+    <i style="background:var(--d3)"></i><i style="background:var(--d4)"></i>
+    <i style="background:var(--d5)"></i><i style="background:var(--d6)"></i>
+  </div>
+
+  <div class="eyebrow">Smart India Hackathon · Flood Intelligence</div>
+  <h1 class="wordmark">DRISHTI</h1>
+  <div class="expand mono">District Risk Intelligence &amp; Satellite Hazard Tracking Interface</div>
+
+  <p class="thesis">Every flood system in India gives you a map.<br><em>We give you a decision.</em></p>
+
+  <div class="hero-meta">
+    <span class="chip">Sentinel-1 SAR</span>
+    <span class="chip">HAND hydrology</span>
+    <span class="chip">735 districts</span>
+    <span class="chip">NDMA SOP engine</span>
+    <span class="chip">Runs offline</span>
+  </div>
+
+  <!-- the thesis, made touchable -->
+  <div class="instrument">
+    <div class="inst-head">
+      <span class="inst-title">Fig. 1 — Why HAND decides everything</span>
+      <span class="inst-hint">Drag the river level. Watch the order the zones go under.</span>
+    </div>
+    <canvas id="hand" width="1120" height="400" role="img"
+      aria-label="Cross-section of a river valley. Raising the river level floods settlement zones in order of their height above the river."></canvas>
+    <div class="inst-ctl">
+      <div class="slider-row">
+        <label class="slider-lab" for="stage">
+          <span>River stage above bed</span>
+          <span class="slider-val mono" id="stageV">2.0 m</span>
+        </label>
+        <input type="range" id="stage" min="0" max="80" value="20" step="1"
+               aria-describedby="stageHelp">
+        <span id="stageHelp" style="font-size:13px;color:var(--ink-3)">
+          Hayaghat published danger level: 4.6&nbsp;m &mdash; a reference marker, not a live reading
+        </span>
+      </div>
+      <div class="readout">
+        <div class="ro">
+          <span class="ro-k">Zones under</span>
+          <span class="ro-v mono" id="zoneN">1</span>
+        </div>
+        <div class="ro">
+          <span class="ro-k">People affected</span>
+          <span class="ro-v mono" id="popN">4,200</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:14.5px;color:var(--ink-3);margin-top:14px;max-width:70ch">
+    HAND is the height of a place above the nearest river. A zone 1.2&nbsp;m above the water
+    floods when the river rises 1.2&nbsp;m — wherever it sits on the map. Compute it once from
+    elevation, and you know the flooding order of an entire district <strong>before a single
+    drop falls.</strong>
+  </p>
+</section>
+
+<!-- ── PROBLEM ───────────────────────────────────────────────────── -->
+<section>
+  <div class="eyebrow">The problem</div>
+  <div class="col">
+    <h2>It is 2 a.m. in Darbhanga and the Bagmati is rising</h2>
+    <p class="lede">The District Magistrate has to decide, right now, three things:</p>
+    <p>Which villages evacuate first. Where the twelve available boats go. Which roads still
+    carry a truck.</p>
+    <p>Today that answer arrives by <strong>telephone</strong>. Someone rings the block office.
+    The block office rings a village head. By the time a picture assembles, the water has moved.</p>
+    <p>Meanwhile satellites pass over that exact spot every few days, recording everything.
+    That data is free, public, and almost entirely unused at the district level — because it
+    arrives as a raster file for a remote-sensing analyst, not as an answer for the person
+    holding the phone.</p>
+  </div>
+</section>
+
+<!-- ── SAR ───────────────────────────────────────────────────────── -->
+<section>
+  <div class="eyebrow">The physical insight</div>
+  <div class="grid2">
+    <div class="col">
+      <h2>A flood happens under cloud. Cameras are blind exactly when you need them.</h2>
+      <p>Optical satellites — the kind that take photographs — see white cloud and nothing else
+      during a storm. That is why most flood imagery arrives days late, after the sky clears.</p>
+      <p><strong>Radar does not care about cloud.</strong> Sentinel-1 fires C-band microwaves
+      down and listens to the echo. Radio waves pass straight through weather, and work at night.</p>
+      <p>Water is smooth, so it reflects the pulse away from the satellite instead of back.
+      The signature is unmistakable:</p>
+      <p style="font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:700;font-size:23px;
+         color:var(--accent);line-height:1.3">Water is black. Everything else is grey.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <h3>What we strip out</h3>
+        <p>Raw radar over-calls water. Dry sand, smooth tarmac and radar shadow all read black.
+        Three masks remove them: the permanent-water reference, a slope cut, and a HAND ceiling —
+        ground too high above the river to be reachable by it.</p>
+      </div>
+      <div class="card">
+        <h3>Resolution and revisit</h3>
+        <p><span class="mono">10 m</span> pixels, <span class="mono">250 km</span> swath — a
+        whole district in one frame. Sentinel-1C restored the constellation in Dec 2024;
+        most Indian districts now get a look every <span class="mono">2–6 days</span>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── GAP ───────────────────────────────────────────────────────── -->
+<section>
+  <div class="eyebrow">The gap</div>
+  <h2 style="max-width:22ch">ISRO already maps floods. We are not competing with that.</h2>
+  <p class="col lede" style="margin-bottom:26px">Bhuvan and NDEM publish real flood layers, and
+  they are good. They stop at a picture, delivered as a file, for a scientist. We consume their
+  output and carry it the last five steps.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Bhuvan / NDEM / FFAS</th><th>DRISHTI</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Output</strong></td><td>A flood extent map</td><td>A ranked task list</td></tr>
+        <tr><td><strong>User</strong></td><td>Remote-sensing analyst</td><td>District Magistrate, on a phone</td></tr>
+        <tr><td><strong>Answers</strong></td><td>Where is the water?</td><td>Where do I send the boats?</td></tr>
+        <tr><td><strong>Unit</strong></td><td>Pixel</td><td>Zone, with population and access status</td></tr>
+        <tr><td><strong>Between passes</strong></td><td>Nothing</td><td>Modelled and labelled as modelled</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── PIPELINE ──────────────────────────────────────────────────── -->
+<section>
+  <div class="eyebrow">How it works</div>
+  <h2>Ten stages, raw signal to a decision</h2>
+  <p class="col lede" style="margin-bottom:26px">Stages 1–2 run continuously over the whole
+  country. Stages 3–10 run only on the districts that stage 2 flags.</p>
+
+  <div class="pipe">
+    <div class="stage"><div class="stage-n">01</div><div class="stage-b">
+      <h4>Ingest</h4><p>Cloud and rainfall every 30 min, from Open-Meteo with no API key. Radar granules every few days.
+      River gauges are the one feed we cannot get: CWC publishes no public keyless API.<span class="band gap">gauges: no feed</span></p></div></div>
+
+    <div class="stage"><div class="stage-n">02</div><div class="stage-b">
+      <h4>Screen</h4><p>Score all 735 districts every half hour: how far the cloud column is filled at low, mid and high level,
+      whether high cloud runs ahead of low cloud into an anvil, convective energy, and rainfall against that district's own
+      five-year record for the same week.<span class="band ok">built</span></p></div></div>
+
+    <div class="stage"><div class="stage-n">03</div><div class="stage-b">
+      <h4>Terrain<span class="band ok">built</span></h4><p>Elevation becomes HAND, wetness index and flow paths. Computed once per district, cached forever.</p></div></div>
+
+    <div class="stage"><div class="stage-n">04</div><div class="stage-b">
+      <h4>Detect</h4><p>Radar before versus radar now. Grey that turned black is new water. Then the three masks strip the false positives.</p></div></div>
+
+    <div class="stage"><div class="stage-n">05</div><div class="stage-b">
+      <h4>Model</h4><p>Between radar passes: rainfall to runoff to river stage to inundation, hourly. When a scene lands, the model snaps back to observed truth.</p></div></div>
+
+    <div class="stage"><div class="stage-n">06</div><div class="stage-b">
+      <h4>Depth</h4><p>Water surface level minus ground height. 0.5 m means wade. 1.8 m means send a boat.</p></div></div>
+
+    <div class="stage"><div class="stage-n">07</div><div class="stage-b">
+      <h4>Expose</h4><p>Overlay people, roads, hospitals, schools, cropland. Water in an empty field is a statistic; water in a village of four thousand is an emergency.</p></div></div>
+
+    <div class="stage"><div class="stage-n">08</div><div class="stage-b">
+      <h4>Rank<span class="band a">the answer</span></h4><p>People × depth × how long it will stay × whether a truck can still reach. Sorted. The top of that list is where you go first.</p></div></div>
+
+    <div class="stage"><div class="stage-n">09</div><div class="stage-b">
+      <h4>Act<span class="band a">the differentiator</span></h4><p>Boats, shelters with real capacity, alternate routes around cut roads, supply quantities from IRS norms, and a drafted SMS. Every rule traces to an NDMA SOP.</p></div></div>
+
+    <div class="stage"><div class="stage-n">10</div><div class="stage-b">
+      <h4>Deliver</h4><p>Dashboard, CAP alert, or a printable situation report.</p></div></div>
+  </div>
+</section>
+
+<!-- ── DASHBOARD ─────────────────────────────────────────────────── -->
+<section>
+  <div class="eyebrow">What the Magistrate sees</div>
+  <h2>One screen. Ranked. Actionable.</h2>
+  <p class="col lede" style="margin-bottom:26px">The confidence badge is permanent and honest:
+  green when radar-observed, amber when modelled between passes, orange in offline demo mode.</p>
+
+  <div class="mock">
+    <div class="mock-bar">
+      <span><strong style="font-family:'IBM Plex Sans Condensed'">DRISHTI</strong>&nbsp;&nbsp;Darbhanga, Bihar</span>
+      <span class="badge">SAR-observed · 4 h ago</span>
+    </div>
+    <div class="mock-body">
+      <div class="mock-map"><div class="mock-blob"></div></div>
+      <div class="mock-side">
+        <div class="mock-sec">
+          <div class="mock-h">Worst affected</div>
+          <div class="zone"><span class="zone-r mono">1</span><span class="zone-n">Zone 14</span><span class="zone-m">4,200 · 1.8 m</span><span class="tag">CUT OFF</span></div>
+          <div class="zone"><span class="zone-r mono">2</span><span class="zone-n">Zone 07</span><span class="zone-m">3,100 · 1.4 m</span></div>
+          <div class="zone"><span class="zone-r mono">3</span><span class="zone-n">Zone 22</span><span class="zone-m">2,800 · 1.1 m</span></div>
+          <div class="zone"><span class="zone-r mono">4</span><span class="zone-n">Zone 05</span><span class="zone-m">1,900 · 0.8 m</span></div>
+        </div>
+        <div class="mock-sec">
+          <div class="mock-h">Actions · Zone 14</div>
+          <div class="act">6 boats — nearest depot 9 km, ETA 40 min</div>
+          <div class="act">Shelter at Govt. High School holds 800. Not enough — open the second.</div>
+          <div class="act">NH-57 submerged at ch. 214. Route via the bund road.</div>
+          <div class="act">4,200 food packets/day · 900 ORS · 2 medical teams</div>
+        </div>
+      </div>
+    </div>
+    <div class="mock-time">
+      <span class="track-lab">Day 3 of 11</span>
+      <div class="track"></div>
+      <span class="track-lab">Drag to replay the flood</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── SCALE ─────────────────────────────────────────────────────── -->
+<section>
+  <div class="eyebrow">Does it scale</div>
+  <div class="grid2">
+    <div class="col">
+      <h2>Watch the whole country. Model only what matters.</h2>
+      <p>Nobody can run a 10-metre hydrological model across India continuously — the compute
+      does not exist at any sane budget.</p>
+      <p>So we don't. A cheap screen runs over every district every half hour. The expensive
+      model runs only where the screen fires.</p>
+      <p><strong>That also gives the demo its opening shot:</strong> a map of India with districts
+      lighting up, then a zoom into the one that matters today.</p>
+    </div>
+    <div class="cascade">
+      <div class="casc">
+        <div class="casc-k">Stage 1 — national screen</div>
+        <strong>735 districts · every 30 minutes</strong>
+        <p style="margin:6px 0 0;color:var(--ink-2);font-size:15px">
+          Cloud fill at three levels, anvil lead in percentage points, convective energy,
+          soil saturation, and rainfall against the local five-year percentile band.</p>
+      </div>
+      <div class="arrow">watchlist — typically 4 to 8 districts</div>
+      <div class="casc two">
+        <div class="casc-k">Stage 2 — district engine</div>
+        <strong>10 m resolution · on demand</strong>
+        <p style="margin:6px 0 0;color:var(--ink-2);font-size:15px">
+          Full HAND inundation, SAR detection, depth, exposure, ranking, action playbook.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CREDIBILITY ───────────────────────────────────────────────── -->
+<section>
+  <div class="eyebrow">Why you can trust the numbers</div>
+  <h2>Nothing here is invented</h2>
+  <p class="col lede" style="margin-bottom:26px">Every step is a published, citable method that
+  operational agencies already use. Physics first — because a District Magistrate must be able
+  to justify an evacuation order, and a black box cannot be justified.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Step</th><th>Method</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>Water from radar</td><td>Automatic histogram thresholding</td><td class="cite">Otsu 1979</td></tr>
+        <tr><td>Radar speckle</td><td>Adaptive local statistics filter</td><td class="cite">Lee 1980</td></tr>
+        <tr><td>Flooding order</td><td>Height Above Nearest Drainage</td><td class="cite">Rennó 2008 · Nobre 2011</td></tr>
+        <tr><td>Waterlogging</td><td>Topographic wetness index</td><td class="cite">Beven &amp; Kirkby 1979</td></tr>
+        <tr><td>Slope</td><td>3×3 gradient</td><td class="cite">Horn 1981</td></tr>
+        <tr><td>Sink removal</td><td>Priority-flood</td><td class="cite">Wang &amp; Liu 2006</td></tr>
+        <tr><td>Flow routing</td><td>D8 steepest descent</td><td class="cite">O'Callaghan &amp; Mark 1984</td></tr>
+        <tr><td>Water depth</td><td>Floodwater Depth Estimation Tool</td><td class="cite">Cohen 2018</td></tr>
+        <tr><td>Rain to runoff</td><td>Curve Number method</td><td class="cite">USDA-NRCS</td></tr>
+        <tr><td>Response actions</td><td>Flood SOPs and IRS norms</td><td class="cite">NDMA</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:18px;font-size:15px;color:var(--ink-3);max-width:70ch">
+    Machine learning sits where it earns its place — refining the water/land threshold and
+    learning cloud-to-flood patterns from past events — never where a decision must be explained.
+  </p>
+</section>
+
+<!-- ── LIMITS ────────────────────────────────────────────────────── -->
+<section>
+  <div class="eyebrow">What we are honest about</div>
+  <div class="grid2">
+    <div class="col">
+      <h2>The limits, stated before you find them</h2>
+      <p>A pitch that claims no weaknesses is a pitch that has not been tested. These are ours,
+      and each one has a stated mitigation rather than a shrug.</p>
+      <p style="font-size:15px;color:var(--ink-3)">
+      The most important: <strong>we are not primarily a warning system.</strong> The Assam floods
+      of 2020 ran for six weeks. Nobody's problem was failing to know a flood was coming — it was
+      not knowing which of 2,100 villages were under water <em>that morning</em>. That is a mapping
+      and allocation problem, and a 2–6 day revisit solves it comfortably.</p>
+    </div>
+    <div>
+      <div class="limit"><span class="limit-m">Revisit</span>
+        <p>10 m radar arrives every 2–6 days. Modelling fills the gap and is labelled as modelled. It does not eliminate it.</p></div>
+      <div class="limit"><span class="limit-m">False +</span>
+        <p>Dry sand, smooth tarmac and radar shadow mimic water. Masked by permanent-water, slope and HAND filters.</p></div>
+      <div class="limit"><span class="limit-m">Canopy</span>
+        <p>Flooding beneath dense forest and between tall buildings is genuinely hard for C-band. L-band NISAR helps.</p></div>
+      <div class="limit"><span class="limit-m">Gauges</span>
+        <p>We have no live gauge feed at all. CWC runs roughly 200 stations but publishes no keyless API;
+        three access routes were tried and documented. River stage is therefore routed from live rainfall
+        through the DEM and labelled <strong>modelled</strong> on every response, never as a reading.</p></div>
+      <div class="limit"><span class="limit-m">Flash</span>
+        <p>A four-hour Chennai flood will be missed by radar. That is what the 30-minute cloud screen exists for.</p></div>
+      <div class="limit"><span class="limit-m">Census</span>
+        <p>Population is a 2011 census figure carried forward, not a live count. Labelled as an estimate everywhere.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ROADMAP ───────────────────────────────────────────────────── -->
+<section>
+  <div class="eyebrow">Where we are</div>
+  <h2>Build order, and what gets cut first</h2>
+  <div style="margin-top:20px">
+    <div class="phase"><span class="phase-n mono">PHASE 1</span>
+      <span class="phase-t"><strong>The spine</strong><span>Radar detection, runoff, depth, bare API — one district end to end</span></span>
+      <span class="bar"><i style="width:34%"></i></span></div>
+    <div class="phase"><span class="phase-n mono">PHASE 2</span>
+      <span class="phase-t"><strong>The differentiator</strong><span>Exposure, ranking, SOP playbook, shelters and routing</span></span>
+      <span class="bar"><i style="width:0"></i></span></div>
+    <div class="phase"><span class="phase-n mono">PHASE 3</span>
+      <span class="phase-t"><strong>The demo</strong><span>Map, worst-affected panel, action cards, time slider</span></span>
+      <span class="bar"><i style="width:0"></i></span></div>
+    <div class="phase"><span class="phase-n mono">PHASE 4</span>
+      <span class="phase-t"><strong>The scale story</strong><span>Waterlogging module, national screen, live data connectors</span></span>
+      <span class="bar"><i style="width:0"></i></span></div>
+    <div class="phase"><span class="phase-n mono">PHASE 5</span>
+      <span class="phase-t"><strong>Judge-proofing</strong><span>Methodology doc, demo script, hindcast against Assam 2020 and Fani 2019</span></span>
+      <span class="bar"><i style="width:0"></i></span></div>
+  </div>
+  <p style="margin-top:22px;font-size:15.5px;color:var(--ink-2);max-width:70ch">
+    <strong>If time runs short, phase 4 gets cut before phase 2.</strong> A narrow system that
+    gives real answers beats a wide one that gives pretty pictures.
+  </p>
+</section>
+
+<!-- ── QA ────────────────────────────────────────────────────────── -->
+<section>
+  <div class="eyebrow">Questions we expect</div>
+  <h2>And the answers</h2>
+  <div style="margin-top:18px" class="col">
+    <div class="qa"><div class="qa-q">"Bhuvan already does this."</div>
+      <p class="qa-a">Bhuvan gives an analyst a map. We give a District Magistrate a ranked task list. We consume Bhuvan's layers; we do not duplicate them.</p></div>
+    <div class="qa"><div class="qa-q">"Six-day revisit means your data is stale."</div>
+      <p class="qa-a">For flash floods, correct — and we say so. For the riverine flooding that displaces millions in Assam and Bihar every year, events last weeks. The satellite comes back while the flood is still there.</p></div>
+    <div class="qa"><div class="qa-q">"Is this real satellite data?"</div>
+      <p class="qa-a">Every algorithm is real and cited. The input runs live from Copernicus when keys are configured and simulated otherwise — and a permanent badge tells you which, on every screen. We would rather show you the badge than have a dead venue connection end the demo.</p></div>
+    <div class="qa"><div class="qa-q">"Where is the AI?"</div>
+      <p class="qa-a">Deliberately not in the decision path. An evacuation order has to be defensible in an inquiry. Physics is auditable; a neural network's activation is not. ML refines thresholds and learns event patterns — it does not decide who evacuates.</p></div>
+    <div class="qa"><div class="qa-q">"What does deployment actually look like?"</div>
+      <p class="qa-a">Python, FastAPI and NumPy on the backend; Leaflet on the front. No GPU, no GDAL, no build step. It runs on a district NIC server, or on a laptop in a field EOC with no internet.</p></div>
+  </div>
+</section>
+
+<footer>
+  <div class="col">
+    <strong style="color:var(--ink)">DRISHTI</strong> · District Risk Intelligence &amp; Satellite
+    Hazard Tracking Interface<br>
+    Data: Copernicus Sentinel-1/2 · ISRO Bhoonidhi &amp; Bhuvan · NASA GPM · IMD · Central Water
+    Commission. Population from Census 2011, projected.<br>
+    <span class="mono" style="font-size:12.5px">Figures shown are illustrative demo values, not a live operational feed.</span>
+  </div>
+</footer>
+
+</div>
+</main>
+
+<script>
+(function(){
+  var cv = document.getElementById('hand');
+  if(!cv) return;
+  var ctx = cv.getContext('2d');
+  var slider = document.getElementById('stage');
+  var stageV = document.getElementById('stageV');
+  var zoneN  = document.getElementById('zoneN');
+  var popN   = document.getElementById('popN');
+
+  var BED = 40;              // river bed elevation, metres
+  // Zones defined by their HAND: height above the river bed.
+  var ZONES = [
+    {id:'Zone 14', hand:1.2, pop:4200, x:0.30},
+    {id:'Zone 07', hand:2.4, pop:3100, x:0.63},
+    {id:'Zone 22', hand:3.6, pop:2800, x:0.18},
+    {id:'Zone 05', hand:5.1, pop:1900, x:0.76},
+    {id:'Zone 31', hand:6.8, pop:1200, x:0.88}
+  ];
+
+  function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+  // Valley cross-section: elevation as a function of horizontal position.
+  function ground(t){
+    var d = Math.abs(t - 0.46);
+    var e = BED + 9.2 * Math.pow(d/0.46, 0.72);          // valley walls
+    e -= 2.6 * Math.exp(-Math.pow((t-0.46)/0.030, 2));   // incised channel
+    e += 0.55 * Math.sin(t*23.0) + 0.34 * Math.sin(t*47.0 + 1.1);
+    e += 0.9 * Math.exp(-Math.pow((t-0.20)/0.045,2));    // levee remnant
+    return e;
+  }
+
+  function draw(){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var W = cv.clientWidth, H = Math.round(W * 0.345);
+    H = Math.max(210, Math.min(H, 340));
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.height = H + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+
+    var stage = slider.value / 10;               // 0 – 8.0 m
+    var surf  = BED + stage;
+    var eMin = BED - 3.4, eMax = BED + 11.4;
+    var padB = 34, padT = 26;
+    function Y(e){ return padT + (eMax - e)/(eMax - eMin) * (H - padT - padB); }
+
+    var C = {
+      ink:css('--ink'), ink2:css('--ink-2'), ink3:css('--ink-3'),
+      line:css('--line-soft'), terr:css('--terrain'), terrLine:css('--terrain-line'),
+      acc:css('--accent'), crit:css('--critical'),
+      d2:css('--d2'), d4:css('--d4'), d6:css('--d6'), surf2:css('--surface-2')
+    };
+
+    // faint elevation grid
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.font = '500 10px "IBM Plex Mono", monospace';
+    ctx.fillStyle = C.ink3;
+    for(var e = Math.ceil(eMin/2)*2; e <= eMax; e += 2){
+      var y = Math.round(Y(e)) + .5;
+      ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(W-8,y); ctx.stroke();
+      ctx.fillText(e.toFixed(0)+' m', 6, y+3);
+    }
+
+    var N = 460, pts = [];
+    for(var i=0;i<=N;i++){ var t=i/N; pts.push([40 + t*(W-48), Y(ground(t)), t]); }
+
+    // water body, graded by depth
+    if(stage > 0.02){
+      var yS = Y(surf);
+      var g = ctx.createLinearGradient(0, yS, 0, Y(BED-3.4));
+      g.addColorStop(0, C.d2); g.addColorStop(0.55, C.d4); g.addColorStop(1, C.d6);
+      ctx.save(); ctx.beginPath();
+      ctx.moveTo(40, yS); ctx.lineTo(W-8, yS);
+      for(var j=pts.length-1;j>=0;j--) ctx.lineTo(pts[j][0], pts[j][1]);
+      ctx.closePath(); ctx.clip();
+      ctx.fillStyle = g; ctx.globalAlpha = .92;
+      ctx.fillRect(40, yS, W-48, H);
+      ctx.restore();
+      // water surface line
+      ctx.strokeStyle = C.acc; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(40, yS+.5); ctx.lineTo(W-8, yS+.5); ctx.stroke();
+    }
+
+    // terrain below the ground line
+    ctx.save(); ctx.beginPath();
+    ctx.moveTo(40, H-padB+20);
+    for(var k=0;k<pts.length;k++) ctx.lineTo(pts[k][0], pts[k][1]);
+    ctx.lineTo(W-8, H-padB+20); ctx.closePath();
+    ctx.globalCompositeOperation='destination-over';
+    ctx.fillStyle = C.terr; ctx.fill();
+    ctx.restore();
+
+    ctx.strokeStyle = C.terrLine; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    for(var m=0;m<pts.length;m++){ m?ctx.lineTo(pts[m][0],pts[m][1]):ctx.moveTo(pts[m][0],pts[m][1]); }
+    ctx.stroke();
+
+    // zone markers
+    var under = 0, ppl = 0;
+    ZONES.forEach(function(z){
+      var zx = 40 + z.x*(W-48);
+      var ze = BED + z.hand;
+      var zy = Y(ze);
+      var wet = surf >= ze;
+      if(wet){ under++; ppl += z.pop; }
+
+      ctx.strokeStyle = wet ? C.crit : C.ink3;
+      ctx.setLineDash([2,3]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(zx, zy); ctx.lineTo(zx, zy-24); ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = wet ? C.crit : C.surf2;
+      ctx.strokeStyle = wet ? C.crit : C.ink3;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.rect(zx-4.5, zy-4.5, 9, 9); ctx.fill(); ctx.stroke();
+
+      ctx.font = '600 11px "IBM Plex Mono", monospace';
+      ctx.fillStyle = wet ? C.crit : C.ink2;
+      ctx.textAlign = z.x > 0.8 ? 'right' : 'center';
+      ctx.fillText(z.id, zx, zy-30);
+      ctx.font = '400 10px "IBM Plex Mono", monospace';
+      ctx.fillStyle = C.ink3;
+      ctx.fillText('HAND ' + z.hand.toFixed(1) + ' m', zx, zy-18);
+      ctx.textAlign = 'left';
+    });
+
+    stageV.textContent = stage.toFixed(1) + ' m';
+    zoneN.textContent = under;
+    popN.textContent = ppl.toLocaleString('en-IN');
+    popN.classList.toggle('alarm', ppl > 0);
+    zoneN.classList.toggle('alarm', under > 0);
+  }
+
+  slider.addEventListener('input', draw);
+  window.addEventListener('resize', draw);
+  if(window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  document.fonts && document.fonts.ready.then(draw);
+  draw();
+})();
+</script>
