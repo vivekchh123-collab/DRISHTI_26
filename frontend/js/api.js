@@ -74,6 +74,11 @@ export const api = {
   // Red-zone endpoints take no severity: a red zone is a property of the
   // place across events, not the outcome of one storm.
   redzones:     (code) => get(`/api/districts/${code}/redzones`),
+  // Click-to-justify: why this exact point is, or is not, a Red Zone. Shared
+  // by the map click handler and the relocation habitation detail — one
+  // justification engine, not two competing explanations of the same ground.
+  explainCell:  (code, lat, lon) =>
+                  get(`/api/districts/${code}/redzones/explain?lat=${lat}&lon=${lon}`),
   habitations:  (code) => get(`/api/districts/${code}/habitations`),
   relocation:   (code) => get(`/api/districts/${code}/relocation`),
   assessmentLayers: (code) => get(`/api/districts/${code}/assessment-layers`),

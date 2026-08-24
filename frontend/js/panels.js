@@ -315,12 +315,64 @@ export function renderHabitations(el, habs, selectedId) {
     </button>`).join("");
 }
 
-export function renderHabitationDetail(hab, plan, horizons) {
+/** The click-to-justify popup: why this exact point on the map is, or is
+ *  not, a Red Zone. Deliberately compact - a popup, not a takeover - but
+ *  every number in it is the same one the map overlay itself was painted
+ *  from, so it can never disagree with what is on screen.
+ */
+export function renderExplainPopup(x) {
+  if (!x.in_district) {
+    return `<div class="explain-pop">
+      <p class="card-sub">Outside the district boundary.</p></div>`;
+  }
+  if (!x.is_red_zone) {
+    return `<div class="explain-pop" data-tone="ok">
+      <h4>Not a Red Zone</h4>
+      <p class="note" style="margin:0">${esc(x.explanation)}</p>
+    </div>`;
+  }
+  const tone = HORIZON_TONE[x.relocation_horizon] || "severe";
+  const rows = [];
+  if (x.readings.slope_deg != null && x.dominant_hazard === "landslide") {
+    rows.push(["Slope", `${x.readings.slope_deg}°`]);
+  }
+  if (x.dominant_hazard === "flood") {
+    rows.push(["Height above drainage", `${x.readings.height_above_drainage_m} m`]);
+  }
+  if (x.population_in_cell) {
+    rows.push(["People here", fmt.int(x.population_in_cell)]);
+  }
+  return `<div class="explain-pop" data-tone="${tone}">
+    <h4>
+      <span class="pill" data-tone="${tone}">${esc(x.relocation_horizon).toUpperCase()}</span>
+      ${esc(HAZARD_LABEL[x.dominant_hazard] || x.dominant_hazard || "Red Zone")}
+    </h4>
+    <p class="note" style="margin:8px 0">${esc(x.explanation)}</p>
+    ${rows.length ? `<div class="explain-rows">${rows.map(([k, v]) =>
+      `<div class="hkv"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>` : ""}
+  </div>`;
+}
+
+export function renderHabitationDetail(hab, plan, horizons, explain) {
   const advice = (horizons.find((x) => x.name === hab.relocation_horizon) || {}).advice || "";
   const hazards = hab.hazards_present.length
     ? hab.hazards_present.map((h) =>
         `<span class="pill" data-tone="watch">${esc(HAZARD_LABEL[h] || h)}</span>`).join(" ")
     : `<span class="card-sub">none</span>`;
+
+  // The concrete, checkable version of "why this horizon" — the same
+  // click-to-justify read the map uses at this exact point, so a presenter
+  // never has to explain the reasoning twice in two different ways.
+  const threat = explain && explain.explanation
+    ? `<div class="threat-box">
+         <p class="note" style="margin:0">${esc(explain.explanation)}</p>
+         ${explain.population_in_cell
+           ? `<p class="card-sub" style="margin-top:6px">
+                ~${fmt.int(explain.population_in_cell)} people are estimated to
+                live in this specific grid cell, at this exact location.</p>`
+           : ""}
+       </div>`
+    : "";
 
   const assignments = plan && plan.assignments.length
     ? `<table class="tbl">
@@ -352,8 +404,8 @@ export function renderHabitationDetail(hab, plan, horizons) {
     </div>
 
     <div class="sect">
-      <h4>Why this horizon</h4>
-      <div class="note">${esc(advice)}</div>
+      <h4>The threat this population faces</h4>
+      ${threat || `<div class="note">${esc(advice)}</div>`}
       <p class="card-sub" style="margin-top:8px">
         Earliest hazard anywhere in the settlement: every
         ${hab.earliest_hazard_return_period_years ?? "—"} years. The horizon uses
@@ -414,6 +466,85 @@ export function renderRelocation(el, data) {
         ${site.constraints.length ? `<div class="sect"><h4>Constraints</h4>
           ${site.constraints.map((c) => `<div class="act-text">· ${esc(c)}</div>`).join("")}
         </div>` : ""}
+      </div>`).join("")}`;
+}
+
+
+/* --- mitigation: who is accountable, under what law ---------------------- */
+
+const STRATEGY_TONE = { relocate: "severe", protect: "alert", monitor: "watch" };
+const FAMILY_LABEL = {
+  structural: "Structural", regulatory: "Regulatory",
+  relocation: "Relocation", preparedness: "Preparedness",
+};
+
+/** One measure: what to do, why, who leads it, and the statute behind it.
+ *
+ *  The rationale and the legal basis are shown inline rather than tucked
+ *  behind a click, because they are the whole point of this screen — a
+ *  measure with no named owner and no statute is a suggestion, not a plan.
+ */
+function measureRow(m) {
+  const lead = m.lead_authority || {};
+  const support = (m.supporting_authorities || [])
+    .map((a) => a.name).filter(Boolean);
+  return `
+    <div class="mit-measure">
+      <div class="mit-measure-hd">
+        <span class="pill" data-tone="watch">${esc(FAMILY_LABEL[m.family] || m.family)}</span>
+        <b>${esc(m.measure)}</b>
+      </div>
+      ${m.rationale ? `<p class="mit-why">${esc(m.rationale)}</p>` : ""}
+      <div class="hkv"><span>Lead</span><b>${esc(lead.name || "—")}${
+        lead.level ? ` <small>(${esc(lead.level)})</small>` : ""}</b></div>
+      ${support.length ? `<div class="hkv"><span>Supporting</span>
+        <b>${esc(support.join(", "))}</b></div>` : ""}
+      ${m.legal_basis ? `<p class="mit-law">${esc(m.legal_basis)}</p>` : ""}
+    </div>`;
+}
+
+export function renderMitigation(el, d) {
+  const s = d.summary || {};
+  const byStrat = s.by_strategy || {};
+  const cost = s.indicative_cost || {};
+
+  el.innerHTML = `
+    <div class="card">
+      <h3>What is done, and by whom</h3>
+      <div class="card-sub">ACCOUNTABLE AUTHORITY AND STATUTE FOR EVERY MEASURE</div>
+      <div class="kv" style="grid-template-columns:repeat(3,1fr)">
+        <div><div class="kv-k">Relocate</div><div class="kv-v">${byStrat.relocate || 0}</div></div>
+        <div><div class="kv-k">Protect</div><div class="kv-v">${byStrat.protect || 0}</div></div>
+        <div><div class="kv-k">Monitor</div><div class="kv-v">${byStrat.monitor || 0}</div></div>
+      </div>
+      ${cost.low_crore != null ? `<p class="card-sub" style="margin-top:10px">
+        Indicative cost <b>₹${fmt.num(cost.low_crore, 0)}–${fmt.num(cost.high_crore, 0)} crore</b>
+        across ${s.habitations_planned} habitations.
+        ${esc(cost.precision || "")}</p>` : ""}
+      ${s.doctrine ? `<div class="note" style="margin-top:10px">${esc(s.doctrine)}</div>` : ""}
+    </div>
+
+    ${(d.plans || []).map((p) => `
+      <div class="card">
+        <h3 style="font-size:15px">${esc(p.label)}</h3>
+        <div class="mit-strat">
+          <span class="pill" data-tone="${STRATEGY_TONE[p.strategy] || "watch"}">
+            ${esc(p.strategy).toUpperCase()}</span>
+          <span class="card-sub">${fmt.int(p.population_in_red_zone)} in red zone ·
+            ${fmt.int(p.families)} families · ${esc(p.horizon)}</span>
+        </div>
+        ${p.strategy_reason
+          ? `<div class="threat-box" style="margin-top:10px">
+               <p class="note" style="margin:0">${esc(p.strategy_reason)}</p></div>`
+          : ""}
+        ${p.cost_estimate ? `<p class="card-sub" style="margin-top:8px">
+          ₹${fmt.num(p.cost_estimate.low_crore, 1)}–${fmt.num(p.cost_estimate.high_crore, 1)} crore
+          &middot; ${esc(p.cost_estimate.basis || "")}</p>` : ""}
+        <div class="sect">
+          <h4>${p.measure_count} measure${p.measure_count === 1 ? "" : "s"}</h4>
+          ${Object.entries(p.measures_by_family || {}).map(([, ms]) =>
+            ms.map(measureRow).join("")).join("")}
+        </div>
       </div>`).join("")}`;
 }
 

@@ -8,8 +8,10 @@ import { api, ApiError, fmt } from "./api.js";
 import { FloodMap } from "./map.js";
 import { Timeline } from "./timeline.js";
 import * as P from "./panels.js";
-import { HistoryLayer, renderHistoryPanel, renderEventDetail, renderTrackDetail }
+import { HistoryLayer, renderHistoryPanel, renderEventDetail, renderTrackDetail,
+        renderHistoricalContext, isPointTestable }
   from "./history.js";
+import { StoryScrubber, renderStoryPanel, phaseAt } from "./story.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,10 +20,12 @@ const $ = (id) => document.getElementById(id);
    application before pressing anything. Relief, inundation and relocation are
    named explicitly rather than hidden behind the word "Event". */
 const GROUPS = {
+  story: [["story", "The story"]],
   now: [["watch", "Live board"]],
   district: [["redzone", "Red zones"],
              ["district", "Inundation & relief"],
-             ["relocation", "Relocation"]],
+             ["relocation", "Relocation"],
+             ["mitigation", "Mitigation"]],
   india: [["national", "All districts"],
           ["state", "State rollup"],
           ["history", "History"]],
@@ -55,6 +59,7 @@ const state = {
   nationalView: "grid",   // "grid" = 27 km squares, "districts" = all 735
   nationalDistricts: null,
   stateData: null,
+  storyData: null,
 };
 
 const el = {
@@ -338,6 +343,11 @@ async function loadRedZones() {
     map.setBoundary(rz.boundary);
     map.setHabitations(habs.habitations);
     map.onZoneClick = selectHabitation;
+    map.enableExplainClick((lat, lon) =>
+      api.explainCell(state.code, lat, lon)
+        .then((x) => P.renderExplainPopup(x))
+        .catch(() => '<div class="explain-pop"><p class="card-sub">'
+          + 'Could not read this point.</p></div>'));
 
     el.badge.hidden = false;
     el.badgeName.textContent = `${rz.district.name}, ${rz.district.state}`;
@@ -384,10 +394,11 @@ async function selectHabitation(habId) {
 
   el.rightTitle.textContent = `Habitation ${hab.rank}`;
   el.rightCount.textContent = "";
-  el.rightBody.innerHTML =
-    `<div style="padding:12px 16px;border-bottom:1px solid var(--line)">
+  const backRow = `<div style="padding:12px 16px;border-bottom:1px solid var(--line)">
        <button class="ctl" id="back-to-list">&larr; All habitations</button>
-     </div>` + P.renderHabitationDetail(hab, plan, state.habitations.horizons);
+     </div>`;
+  el.rightBody.innerHTML = backRow
+    + P.renderHabitationDetail(hab, plan, state.habitations.horizons);
   el.rightBody.scrollTop = 0;
   $("back-to-list").addEventListener("click", () => {
     state.selectedZone = null;
@@ -396,6 +407,21 @@ async function selectHabitation(habId) {
   });
   map.highlight(habId);
   map.flyToZone(habId);
+
+  // The concrete threat read is a second network round trip - the card above
+  // (population, hazard pills, allocation) renders immediately without
+  // waiting on it, and this fills in the "why" once it lands.
+  try {
+    const explain = await api.explainCell(state.code, hab.lat, hab.lon);
+    if (state.selectedZone !== habId) return;   // moved on before this landed
+    el.rightBody.innerHTML = backRow
+      + P.renderHabitationDetail(hab, plan, state.habitations.horizons, explain);
+    $("back-to-list").addEventListener("click", () => {
+      state.selectedZone = null;
+      renderHabitationList();
+      map.highlight(null);
+    });
+  } catch { /* the base card above already stands on its own */ }
 }
 
 /* ----------------------------------------------------- relocation screen */
@@ -441,6 +467,139 @@ async function loadRelocation() {
 
     P.renderRelocation(el.rightBody, reloc);
     el.rightCount.textContent = `${reloc.sites_identified} sites`;
+  } catch (err) {
+    if (err instanceof ApiError) showError(err); else throw err;
+  }
+}
+
+/* ---------------------------------------------------------- story screen */
+
+const STORY_CODE = "KL-WAY";
+const STORY_DATE = "2024-07-30";
+const STORY_LAT = 11.47, STORY_LON = 76.13;
+
+/** The demonstration: Wayanad on the map, one draggable pointer, the sidebar
+ *  showing whatever the system is doing at that hour.
+ *
+ *  Everything is loaded once here so that dragging is instant. A scrubber that
+ *  fetched per step would be unusable in front of an audience.
+ */
+async function loadStory() {
+  el.rightTitle.textContent = "Wayanad, July 2024";
+  el.rightCount.textContent = "";
+  el.rightBody.innerHTML = P.skeleton(5);
+  el.stats.innerHTML = "";
+  timeline.clear();
+
+  try {
+    const [rz, habs, layers, board, strike, assess, series] = await Promise.all([
+      api.redzones(STORY_CODE),
+      api.habitations(STORY_CODE),
+      api.assessmentLayers(STORY_CODE),
+      api.watch(STORY_DATE),
+      api.explainCell(STORY_CODE, STORY_LAT, STORY_LON),
+      api.assessment(STORY_CODE, state.severity),
+      api.timeline(STORY_CODE, state.severity),
+    ]);
+
+    state.storyData = {
+      redzone: rz,
+      detect: (board.districts || []).find((d) => d.code === STORY_CODE) || {},
+      strike,
+      flood: series,
+      cards: assess.action_cards || [],
+    };
+    setProvenance(rz.provenance);
+
+    // The map holds Wayanad and its risk rating for the whole story. It never
+    // moves screen, because the argument is that this one place was known
+    // ground before, during and after — and cutting away would break that.
+    map.clearVectors();
+    map.setDistrict(STORY_CODE, state.severity, layers.bounds);
+    map.setBoundary(rz.boundary);
+    map.setHabitations(habs.habitations);
+    map.onZoneClick = null;
+    state.assessmentLayer = "redzone";
+    renderAssessmentLayers(layers.layers);
+    map.setAssessmentOverlay("redzone");
+
+    el.badge.hidden = false;
+    el.badgeName.textContent = "Wayanad, Kerala";
+    el.badgeSub.textContent =
+      `${fmt.num(rz.red_zones.red_zone_area_km2, 0)} KM² RED ZONE · ` +
+      `${fmt.compact(rz.relocation.population_in_red_zone)} INSIDE IT · ` +
+      `30 JULY 2024`;
+
+    P.renderRedZoneStats(el.stats, rz);
+
+    const bar = $("story-bar");
+    bar.hidden = false;
+    if (!storyScrubber) {
+      storyScrubber = new StoryScrubber({
+        root: bar,
+        onScrub: (t) => {
+          renderStoryPanel(el.rightBody, t, state.storyData);
+          el.rightCount.textContent = phaseAt(t);
+        },
+      });
+    }
+    storyScrubber.set(-72);
+  } catch (err) {
+    if (err instanceof ApiError) showError(err); else throw err;
+  }
+}
+
+/* ----------------------------------------------------- mitigation screen */
+
+/** Who is accountable for fixing each Red Zone habitation, and under what law.
+ *
+ *  The screen that answers "and then what". Detection and even relocation
+ *  planning still leave the question of who actually signs the order — this
+ *  names the authority and the statute for every measure, which is what turns
+ *  an assessment into something a District Magistrate can act on.
+ */
+async function loadMitigation() {
+  el.rightTitle.textContent = "Mitigation";
+  el.rightCount.textContent = "";
+  el.rightBody.innerHTML = P.skeleton(6);
+  el.stats.innerHTML = "";
+  timeline.clear();
+
+  try {
+    const [rz, habs, mit, layers] = await Promise.all([
+      api.redzones(state.code),
+      api.habitations(state.code),
+      api.mitigation(state.code),
+      api.assessmentLayers(state.code),
+    ]);
+    state.redzone = rz;
+    state.habitations = habs;
+    setProvenance(rz.provenance);
+
+    map.clearVectors();
+    map.setDistrict(state.code, state.severity, layers.bounds);
+    map.setBoundary(rz.boundary);
+    map.setHabitations(habs.habitations);
+    map.onZoneClick = null;
+
+    el.badge.hidden = false;
+    el.badgeName.textContent = `${rz.district.name} — mitigation`;
+    const s = mit.summary;
+    const cost = s.indicative_cost || {};
+    el.badgeSub.textContent =
+      `${s.habitations_planned} HABITATIONS PLANNED · ` +
+      `${s.relocation_families || 0} FAMILIES TO RELOCATE` +
+      (cost.low_crore != null
+        ? ` · ₹${fmt.num(cost.low_crore, 0)}–${fmt.num(cost.high_crore, 0)} CR`
+        : "");
+
+    P.renderRedZoneStats(el.stats, rz);
+    state.assessmentLayer = "redzone";
+    renderAssessmentLayers(layers.layers);
+    map.setAssessmentOverlay("redzone");
+
+    P.renderMitigation(el.rightBody, mit);
+    el.rightCount.textContent = `${s.habitations_planned} planned`;
   } catch (err) {
     if (err instanceof ApiError) showError(err); else throw err;
   }
@@ -767,6 +926,7 @@ async function loadState() {
 
 /* ------------------------------------------------------- observed history */
 
+let storyScrubber = null;
 let historyLayer = null;
 let historyTimer = null;
 
@@ -827,11 +987,45 @@ function bindHistoryRows() {
     b.addEventListener("click", () => {
       const e = (state.history.events || []).find((x) => x.id === b.dataset.event);
       if (e) {
-        renderEventDetail(el.stats, e);
+        showEventDetail(e);
         map.flyTo(e.lat, e.lon, 8);
       }
     });
   });
+}
+
+/** Which of our modelled districts this event actually happened in, and
+ *  whether that district's hazard has a single point a model can be tested
+ *  against. Returns null when the event has no modelled district at all —
+ *  in that case there is nothing honest to say, so nothing is shown.
+ */
+async function loadHistoricalContext(e) {
+  if (!e.districts || !e.districts.length) return null;
+  const code = e.districts[0];
+  try {
+    if (isPointTestable(e.hazard)) {
+      const v = await api.historyValidation(code);
+      const verdict = (v.verdicts || []).find((x) => x.event_id === e.id);
+      return { kind: "point", verdict };
+    }
+    const rz = await api.redzones(code);
+    return { kind: "area", districtName: rz.district.name, redZone: rz.red_zones };
+  } catch {
+    return null;
+  }
+}
+
+/** Event detail, then — once it lands — the honest "would this have helped"
+ *  read. Two separate renders on purpose: the citation and death toll should
+ *  never wait on a second network round trip to appear.
+ */
+async function showEventDetail(e) {
+  renderEventDetail(el.stats, e);
+  const holder = document.createElement("div");
+  holder.className = "hist-context-holder";
+  el.stats.appendChild(holder);
+  const ctx = await loadHistoricalContext(e);
+  renderHistoricalContext(holder, ctx);
 }
 
 async function loadHistory() {
@@ -849,7 +1043,7 @@ async function loadHistory() {
     if (!historyLayer) {
       historyLayer = new HistoryLayer(window.L, map.map);
       historyLayer.onSelect = (sel) => {
-        if (sel.kind === "event") renderEventDetail(el.stats, sel.event);
+        if (sel.kind === "event") showEventDetail(sel.event);
         else renderTrackDetail(el.stats, sel.track);
       };
     }
@@ -936,13 +1130,21 @@ function setScreen(screen) {
     if (historyLayer) historyLayer.detach();
   }
   if (screen !== "watch") stopWatchTimers();
+  if (screen !== "story") {
+    const sb = $("story-bar");
+    if (sb) sb.hidden = true;
+    if (storyScrubber) storyScrubber.stop();
+  }
+  if (screen !== "redzone") map.disableExplainClick();
   map.invalidate();
-  if (screen === "watch") loadWatch();
+  if (screen === "story") loadStory();
+  else if (screen === "watch") loadWatch();
   else if (screen === "national") loadNational();
   else if (screen === "state") loadState();
   else if (screen === "history") loadHistory();
   else if (screen === "redzone") loadRedZones();
   else if (screen === "relocation") loadRelocation();
+  else if (screen === "mitigation") loadMitigation();
   else if (screen === "planning") loadPlanning();
   else { state.layer = "depth"; loadDistrict(); }
 }
@@ -1072,9 +1274,10 @@ async function boot() {
     if (e.code === "ArrowRight") timeline.setHour(timeline.hour + 1);
   });
 
+
   // The board opens the application. Anyone arriving cold should be looking at
   // what needs attention today, not at a district they have not chosen yet.
-  setScreen("watch");
+  setScreen("story");
 }
 
 boot();

@@ -239,3 +239,45 @@ def test_live_layer_png_url_carries_the_live_flag():
     assert live.status_code == 200
     assert demo.status_code == 200
     assert live.headers["content-type"] == "image/png"
+
+
+def test_explain_cell_justifies_a_known_red_zone():
+    """Click-to-justify: every number must be checkable against a real threshold.
+
+    Uses a real habitation's own coordinates from BR-DAR (Darbhanga), which is
+    known flood-dominant, so this exercises the actual production path rather
+    than a synthetic fixture.
+    """
+    habs = client.get("/api/districts/%s/habitations" % CODE).json()["habitations"]
+    h = habs[0]
+    r = client.get("/api/districts/%s/redzones/explain?lat=%f&lon=%f"
+                   % (CODE, h["lat"], h["lon"]))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["in_district"] is True
+    if body["is_red_zone"]:
+        assert body["dominant_hazard"]
+        assert body["relocation_horizon"] in ("immediate", "short-term", "medium-term")
+        assert body["return_period_years"] is not None
+        # The explanation must not misuse "a"/"an" - a live symptom of the
+        # underlying values being interpolated correctly into the sentence.
+        assert " a %s" % body["relocation_horizon"] not in body["explanation"] \
+            or body["relocation_horizon"][0] not in "aeiou"
+        assert body["thresholds"]["flood_depth_m"] == 1.0
+    else:
+        assert "not a Red Zone" in body["explanation"]
+    assert body["readings"]["elevation_m"] is not None
+
+
+def test_explain_cell_outside_the_district_says_so():
+    r = client.get("/api/districts/%s/redzones/explain?lat=0&lon=0" % CODE)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["in_district"] is False
+    assert body["is_red_zone"] is False
+    assert "outside the district" in body["explanation"]
+
+
+def test_explain_cell_unknown_district_is_404():
+    r = client.get("/api/districts/ZZ-NOPE/redzones/explain?lat=10&lon=80")
+    assert r.status_code == 404

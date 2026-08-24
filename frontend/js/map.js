@@ -12,7 +12,7 @@ const TONE = { severe: "#DC5B4B", alert: "#E08A3C", watch: "#D8B33C", ok: "#3FA8
 export class FloodMap {
   constructor(el) {
     this.map = L.map(el, {
-      zoomControl: true,
+      zoomControl: false,        // added explicitly below, positioned deliberately
       attributionControl: false,
       zoomSnap: 0.25,
       minZoom: 3,
@@ -155,6 +155,57 @@ export class FloodMap {
   clearVectors() {
     this.vectors.clearLayers();
     this.markers.clear();
+  }
+
+  /* --- click-to-justify: why is THIS point on the map a Red Zone --------- */
+
+  /** Wire a click-anywhere-on-the-map handler that justifies whatever ground
+   *  is under the cursor. ``onExplain(lat, lon)`` should return a Promise
+   *  resolving to the popup's inner HTML - the map only owns *where* the
+   *  popup opens and its loading state, not what the justification says.
+   *
+   *  Deliberately opt-in per screen rather than always-on: a click means
+   *  something different on the flood/inundation map (it does nothing there
+   *  today) than it does here, and a popup firing on every screen would be a
+   *  surprise rather than a feature.
+   */
+  enableExplainClick(onExplain) {
+    this.disableExplainClick();
+    this._explainHandler = (e) => {
+      const popup = L.popup({ maxWidth: 320, className: "explain-popup" })
+        .setLatLng(e.latlng)
+        .setContent('<div class="explain-loading">Reading the model at this point…</div>')
+        .openOn(this.map);
+      onExplain(e.latlng.lat, e.latlng.lng).then((html) => {
+        // The presenter may have clicked elsewhere, or closed the popup,
+        // before this resolved - only fill in a popup that is still open.
+        if (this.map.hasLayer(popup)) popup.setContent(html);
+      });
+    };
+    this.map.on("click", this._explainHandler);
+  }
+
+  disableExplainClick() {
+    if (this._explainHandler) {
+      this.map.off("click", this._explainHandler);
+      this._explainHandler = null;
+    }
+  }
+
+  /** Open the justification popup at a known point, without a click.
+   *
+   *  Same popup a presenter would get by clicking, opened from the story rail
+   *  so the exact coordinates of a real event can be shown without hunting for
+   *  them live on stage.
+   */
+  openExplainAt(lat, lon, onExplain) {
+    const popup = L.popup({ maxWidth: 320, className: "explain-popup" })
+      .setLatLng([lat, lon])
+      .setContent('<div class="explain-loading">Reading the model at this point…</div>')
+      .openOn(this.map);
+    onExplain().then((html) => {
+      if (this.map.hasLayer(popup)) popup.setContent(html);
+    });
   }
 
   /* --- red zones and relocation ------------------------------------------ */

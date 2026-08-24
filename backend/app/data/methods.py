@@ -126,12 +126,74 @@ METHODS: List[Dict[str, str]] = [
         "limitation": "Trades spatial resolution for radiometric stability.",
     },
     {
-        "step": "Population distribution",
-        "method": "Dasymetric allocation weighted by built-up intensity",
-        "source": "Standard dasymetric mapping; cf. WorldPop methodology.",
-        "module": "core/exposure.py:allocate_population",
-        "limitation": "Preserves the district total exactly but the within-"
-                      "district distribution is modelled, not surveyed.",
+        "step": "Population",
+        "method": "Observed counts, 22 modelled districts; dasymetric "
+                  "fallback elsewhere",
+        "source": "GHS-POP R2023A (JRC) - real population counts per 100 m "
+                  "cell, aggregated to the analysis grid. Falls back to "
+                  "Census 2011 projected to 2025 and spread by built-up "
+                  "intensity only where no GHS-POP bake exists.",
+        "module": "core/exposure.py:build_exposure",
+        "limitation": "Falls back to a modelled distribution for districts "
+                      "outside the 22 baked; the fallback preserves the "
+                      "Census total exactly but its within-district shape is "
+                      "modelled, not observed.",
+    },
+    {
+        "step": "Built-up land",
+        "method": "Observed built-up surface, 22 modelled districts",
+        "source": "GHS-BUILT-S R2023A (JRC), satellite-derived, 1990-2025.",
+        "module": "core/exposure.py:build_exposure",
+        "limitation": "Falls back to a terrain-suitability model where unbaked.",
+    },
+    {
+        "step": "Cropland and tree cover",
+        "method": "Observed land-cover classification, 22 modelled districts",
+        "source": "ESA WorldCover 10 m v200 (2021).",
+        "module": "core/exposure.py:build_exposure",
+        "limitation": "One snapshot year (2021), not a loss trajectory.",
+    },
+    {
+        "step": "Roads and facilities",
+        "method": "Observed highway geometry and health/school locations, "
+                  "22 modelled districts",
+        "source": "OpenStreetMap contributors, via the Overpass API. "
+                  "Licence: ODbL 1.0.",
+        "module": "core/exposure.py:build_exposure",
+        "limitation": "Facility capacity is still an estimate at Indian "
+                      "Public Health Standards rates - OSM rarely tags bed "
+                      "counts. Falls back to least-cost roads and IPHS-rate "
+                      "placement where unbaked.",
+    },
+    {
+        "step": "District boundaries",
+        "method": "Real administrative outlines, all 735 districts",
+        "source": "geoBoundaries gbOpen ADM2. Licence: CC-BY 4.0.",
+        "module": "core/boundary.py:load",
+        "limitation": "Falls back to a synthetic area-matched envelope for "
+                      "any district code not matched by name.",
+    },
+    {
+        "step": "Cloudburst hazard",
+        "method": "Orographic potential x catchment flashiness",
+        "source": "IMD's operational definition: rainfall >=100 mm in one "
+                  "hour.",
+        "module": "core/cloudburst.py",
+        "limitation": "A susceptibility read, not a nowcast; treated as a "
+                      "distinct event type because a monsoon design storm's "
+                      "peak hour never reaches the threshold.",
+    },
+    {
+        "step": "Live cloud-pattern reading",
+        "method": "Vertical column structure against convective thresholds "
+                  "- no machine learning",
+        "source": "Textbook convective meteorology: level-filled, anvil "
+                  "signature and CAPE bands; anomaly measured in percentage "
+                  "points against a 5-year per-district-per-week baseline "
+                  "(Open-Meteo ERA5 archive).",
+        "module": "core/cloudwatch.py",
+        "limitation": "Not a rainfall forecast. Says the sky is organising "
+                      "and how fast, not how much will fall.",
     },
     {
         "step": "Landslide hazard zonation",

@@ -19,7 +19,8 @@
     </div>
 
     <div class="tabs" id="screen-tabs" role="tablist" aria-label="Screen">
-      <button class="tab" role="tab" data-group="now"      aria-selected="true">Now</button>
+      <button class="tab" role="tab" data-group="story"    aria-selected="true">Wayanad 2024</button>
+      <button class="tab" role="tab" data-group="now"      aria-selected="false">Now</button>
       <button class="tab" role="tab" data-group="district" aria-selected="false">District</button>
       <button class="tab" role="tab" data-group="india"    aria-selected="false">India</button>
     </div>
@@ -53,7 +54,7 @@
 
   <nav class="subtabs" id="subtabs" role="tablist" aria-label="Section"></nav>
 
-  <div class="main" id="main" data-screen="watch">
+  <div class="main" id="main" data-screen="story">
 
     <!-- left: layers -->
     <aside class="pane pane-l" id="pane-left">
@@ -97,6 +98,12 @@
       <div class="pane-body" id="right-body"></div>
     </aside>
   </div>
+
+  <!-- The demonstration scrubber: one draggable pointer from three days before
+       the Wayanad landslide to four days after, with the real events marked on
+       the track. Its own footer rather than a reuse of the flood slider,
+       because it spans the whole story rather than one event's hours. -->
+  <footer class="timeline story-bar" id="story-bar" hidden></footer>
 
   <footer class="timeline" id="timeline" hidden>
     <button class="tl-btn" id="play" aria-label="Play event timeline" title="Play">

@@ -446,7 +446,17 @@ class DistrictAssessment:
             "grid": {"cells": self.grid.n,
                      "cell_size_m": round(self.grid.cell_m, 1),
                      "bounds": self.grid.leaflet_bounds},
-            "red_zones": self.redzones.summary(cell, mask),
+            "red_zones": {
+                **self.redzones.summary(cell, mask),
+                # Everyone standing on mapped hazard ground, district-wide.
+                # Distinct from relocation.people_to_relocate, which counts
+                # only those inside habitations the model has flagged — the
+                # two differ by an order of magnitude and conflating them
+                # would either understate the exposure or overstate the
+                # relocation caseload.
+                "population_in_red_zone": int(round(float(
+                    self.exposure.population[self.redzones.is_red & mask].sum()))),
+            },
             "landslide": self.landslide.summary(),
             "cloudburst": self.cloudburst.summary(cell),
             "vulnerability": self.vulnerability,
@@ -464,6 +474,130 @@ class DistrictAssessment:
             },
             "provenance": self.provenance,
             "build_seconds": round(self.build_seconds, 2),
+        }
+
+    def explain_cell(self, lat: float, lon: float) -> dict:
+        """Why this one point on the map is, or is not, a Red Zone.
+
+        This is the answer to the question a judge actually asks: not "what is
+        your model" but "why is *this* village red". Every number here is read
+        directly off the same arrays the map is painted from - nothing is
+        recomputed or approximated for the explanation, so it can never disagree
+        with what is on screen.
+        """
+        r, c = self.grid.rowcol(lat, lon)
+        mask = self.exposure.district_mask
+        rz = self.redzones
+
+        inside = bool(mask[r, c])
+        rp = float(rz.return_period[r, c])
+        is_red = bool(np.isfinite(rp))
+        dominant = rz.dominant_name(r, c)
+        pop = float(self.exposure.population[r, c])
+
+        horizon_name, horizon_advice = redzone_mod.horizon_for(rp)
+
+        # Every hazard that reaches this exact cell, not just the dominant one -
+        # a place can be a flood red zone and also carry landslide exposure, and
+        # the dominant hazard is what governs the horizon, not the only thing
+        # present.
+        per_hazard = {}
+        for name in redzone_mod.HAZARDS:
+            arr = rz.per_hazard_rp.get(name)
+            if arr is None:
+                continue
+            hrp = float(arr[r, c])
+            per_hazard[name] = {
+                "applicable": bool(np.isfinite(hrp)),
+                "return_period_years": hrp if np.isfinite(hrp) else None,
+            }
+
+        # The physical readings that actually produced the number, in plain
+        # units - a judge can check every one of these against the published
+        # threshold in redzone.UNINHABITABLE rather than trust the label.
+        t = self.terrain
+        readings = {
+            "elevation_m": round(float(t.dem[r, c]), 1),
+            "slope_deg": round(float(t.hillslope[r, c]), 1),
+            "height_above_drainage_m": round(float(t.hand[r, c]), 2),
+            "topographic_wetness_index": round(float(t.twi[r, c]), 2),
+        }
+        if self.landslide.tehd is not None:
+            readings["landslide_tehd"] = round(float(self.landslide.tehd[r, c]), 2)
+            readings["landslide_susceptibility"] = round(
+                float(self.landslide.susceptibility[r, c]), 3)
+        if self.cloudburst.applicable:
+            readings["cloudburst_susceptibility"] = round(
+                float(self.cloudburst.susceptibility[r, c]), 3)
+        if self.erosion.applicable:
+            readings["shoreline_retreat_m_per_year"] = round(
+                float(self.erosion.retreat_m_per_year[r, c]), 2)
+
+        sentences: List[str] = []
+        if not inside:
+            sentences.append("This point falls outside the district boundary.")
+        elif not is_red:
+            sentences.append(
+                "No modelled hazard renders this cell uninhabitable within a "
+                "century. It is standing land, not a Red Zone.")
+        else:
+            band = ("within a decade" if rp < 10 else
+                    "within a generation (10–30 years)" if rp < 30 else
+                    "rarely, but severely (30–100 years)")
+            article = "an" if horizon_name[:1] in "aeiou" else "a"
+            sentences.append(
+                "This cell is %s %s Red Zone: the %s hazard is modelled to "
+                "recur %s (a %.0f-year return period), which is inside the "
+                "BIS/NDMA threshold for permanent uninhabitability."
+                % (article, horizon_name, dominant or "governing", band, rp))
+            if dominant == "flood":
+                sentences.append(
+                    "It sits %.2f m above the nearest drainage line - HAND, the "
+                    "same metric that drives the flood depth map - which is "
+                    "why water reaches it at all; the uninhabitable threshold "
+                    "is %.1f m of depth or %d h of standing water above %.1f m."
+                    % (readings["height_above_drainage_m"],
+                       redzone_mod.UNINHABITABLE["flood_depth_m"],
+                       int(redzone_mod.UNINHABITABLE["flood_duration_h"]),
+                       redzone_mod.UNINHABITABLE["flood_duration_depth_m"]))
+            elif dominant == "landslide":
+                sentences.append(
+                    "Slope here is %.0f°, measured at the DEM's native 30 m "
+                    "resolution rather than averaged across the analysis cell. "
+                    "The BIS IS 14496 LHEF rating for this ground is %.1f/10."
+                    % (readings["slope_deg"], readings.get("landslide_tehd", 0.0)))
+            elif dominant == "cloudburst":
+                sentences.append(
+                    "This slope sits in the orographic lift band that "
+                    "concentrates cloudburst rainfall (IMD's own ≥100 mm/hr "
+                    "definition), with a catchment shaped to flash rather than "
+                    "spread the runoff.")
+            elif dominant == "erosion":
+                sentences.append(
+                    "The shoreline here is retreating %.2f m/year (Bruun "
+                    "1962); land is expected to be gone within the erosion "
+                    "model's %d-year horizon."
+                    % (readings.get("shoreline_retreat_m_per_year", 0.0),
+                       self.erosion.horizon_years))
+            if pop > 0:
+                sentences.append(
+                    "An estimated %d people live in this one cell."
+                    % round(pop))
+
+        return {
+            "lat": lat, "lon": lon, "row": r, "col": c,
+            "in_district": inside,
+            "is_red_zone": is_red,
+            "return_period_years": rp if is_red else None,
+            "dominant_hazard": dominant,
+            "relocation_horizon": horizon_name if is_red else "monitor",
+            "horizon_advice": horizon_advice if is_red else None,
+            "unsuitability": round(float(rz.unsuitability[r, c]), 3),
+            "population_in_cell": round(pop),
+            "per_hazard": per_hazard,
+            "readings": readings,
+            "thresholds": redzone_mod.UNINHABITABLE,
+            "explanation": " ".join(sentences),
         }
 
 

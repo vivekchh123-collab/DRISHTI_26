@@ -531,6 +531,25 @@ def redzones(code: str) -> dict:
     }
 
 
+@router.get("/api/districts/{code}/redzones/explain", tags=["red zones"])
+def explain_redzone_cell(code: str, lat: float = Query(...),
+                         lon: float = Query(...)) -> dict:
+    """Why this exact point on the map is, or is not, a Red Zone.
+
+    Click-to-justify: every number here is read directly off the same arrays
+    the map overlay is painted from, so the answer can never disagree with
+    what is on screen. This is the endpoint that turns "the map is red here"
+    into something a District Magistrate - or a judge - can check line by line
+    against a published threshold.
+    """
+    try:
+        districts_data.get(code)
+    except KeyError:
+        raise HTTPException(404, "unknown district %r" % code)
+    a = scenario.assessment(code)
+    return a.explain_cell(lat, lon)
+
+
 @router.get("/api/districts/{code}/habitations", tags=["red zones"])
 def habitations(code: str) -> dict:
     """Vulnerable habitations, ranked, with a relocation horizon each."""

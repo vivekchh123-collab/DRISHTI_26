@@ -19,7 +19,15 @@ button, input, select { font: inherit; color: inherit; }
 .num  { font-variant-numeric: tabular-nums; }
 
 /* --- app shell ----------------------------------------------------------- */
-.app { display: grid; grid-template-rows: auto 1fr auto; height: 100%; }
+/* Flex column rather than fixed grid rows on purpose. With
+   `grid-template-rows: auto 1fr auto`, *which child* gets the flexible row
+   depends on how many children are currently visible — the subtab bar and the
+   two timeline footers all hide themselves, and the story rail is always
+   present, so the 1fr silently lands on whichever element happens to be second.
+   Flex with `.main { flex: 1 }` gives the map region the slack regardless of
+   how many bars are on screen. */
+.app { display: flex; flex-direction: column; height: 100%; }
+.main { flex: 1; }
 
 /* --- header -------------------------------------------------------------- */
 .hdr {
@@ -160,6 +168,23 @@ input[type="range"]::-moz-range-thumb {
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
          background: var(--line-soft); border-bottom: var(--border); }
 .stat { background: var(--surface-1); padding: var(--s3) var(--s4); }
+/* A detail card (event/track/etc.) is prose, not a stat tile, and must span
+   both columns of the grid it happens to render into — half-width paragraph
+   text reads as broken, not compact. */
+.stats > .card { grid-column: 1 / -1; }
+
+/* "Would this have helped" — the honesty of the claim is carried in the
+   colour, not just the words: red only when the model genuinely would have
+   flagged the exact spot, amber for a real-but-modest signal, the calm tone
+   when the number does not support a claim either way. */
+.hist-context { border-left: 3px solid var(--text-3); }
+.hist-context[data-tone="severe"] { border-left-color: var(--severe); }
+.hist-context[data-tone="alert"]  { border-left-color: var(--alert); }
+.hist-context[data-tone="watch"]  { border-left-color: var(--watch); }
+.hist-context[data-tone="ok"]     { border-left-color: var(--ok); }
+.hist-context h4 { margin: 0 0 6px; font-size: var(--t-sm);
+                   font-family: var(--font-mono); letter-spacing: .04em;
+                   text-transform: uppercase; color: var(--text-3); }
 .stat-k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .09em;
           text-transform: uppercase; color: var(--text-3); }
 .stat-v { font-family: var(--font-cond); font-weight: 700; font-size: var(--t-xl);
@@ -243,6 +268,13 @@ input[type="range"]::-moz-range-thumb {
 .note { background: var(--surface-2); border: var(--border);
         border-radius: var(--radius); padding: var(--s3);
         font-size: var(--t-sm); color: var(--text-2); }
+/* The concrete, checkable "why" — deliberately a stronger visual than a plain
+   .note, since this is the sentence that has to survive a judge asking "prove
+   it" out loud. */
+.threat-box { background: var(--severe-bg); border: 1px solid var(--severe);
+             border-radius: var(--radius); padding: var(--s3); }
+.threat-box .note { background: transparent; border: 0; padding: 0;
+                    color: var(--text); font-weight: 500; }
 .alert-draft { font-family: var(--font-mono); font-size: var(--t-xs);
                line-height: 1.6; color: var(--text-2);
                background: var(--surface-2); border: var(--border);
@@ -324,6 +356,19 @@ table.tbl td.r { text-align: right; font-variant-numeric: tabular-nums;
 .leaflet-bar a { background: var(--surface-1); color: var(--text);
                  border-bottom-color: var(--line); }
 .leaflet-bar a:hover { background: var(--surface-2); }
+
+/* Click-to-justify popup — the "why is this ground red" answer, right where
+   the presenter clicked rather than in a side panel that pulls the eye away
+   from the map. */
+.explain-loading { font-size: var(--t-sm); color: var(--text-3); }
+.explain-pop h4 { margin: 0; display: flex; align-items: center; gap: 6px;
+                  font-size: var(--t-sm); font-weight: 700; }
+.explain-pop[data-tone="severe"] h4 { color: var(--severe); }
+.explain-pop[data-tone="alert"]  h4 { color: var(--alert); }
+.explain-pop[data-tone="watch"]  h4 { color: var(--watch); }
+.explain-pop[data-tone="ok"]     h4 { color: var(--ok); }
+.explain-rows { border-top: 1px solid var(--line-soft); padding-top: 6px;
+                margin-top: 6px; }
 
 /* --- responsive ---------------------------------------------------------- */
 /* The header carries a brand, four tabs, two selects, a provenance badge and
@@ -628,3 +673,110 @@ table.tbl td.r { text-align: right; font-variant-numeric: tabular-nums;
   .live-toggle-dot { animation: none !important; }
 }
 
+
+/* --- mitigation: the accountability screen ------------------------------- */
+
+/* Each measure is a small self-contained block rather than a table row: it
+   carries a rationale sentence and a statute line, and those wrap. A table
+   would either truncate them or blow the column widths apart. */
+.mit-measure {
+  border-left: 2px solid var(--line);
+  padding: var(--s2) 0 var(--s2) var(--s3);
+  margin-bottom: var(--s3);
+}
+.mit-measure:last-child { margin-bottom: 0; }
+.mit-measure-hd {
+  display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 4px; font-size: var(--t-sm);
+}
+.mit-why {
+  margin: 4px 0 6px; font-size: var(--t-xs); color: var(--text-2);
+  line-height: 1.5;
+}
+/* The statute is the load-bearing detail on this screen — an instruction with
+   no legal basis is advice. Monospaced so it reads as a citation. */
+.mit-law {
+  margin: 6px 0 0; font-family: var(--font-mono); font-size: 10px;
+  line-height: 1.5; color: var(--text-3);
+}
+.mit-strat {
+  display: flex; align-items: center; gap: var(--s3);
+  flex-wrap: wrap; margin-top: 6px;
+}
+
+/* The `hidden` attribute must actually hide. `.subtabs { display: flex }` and
+   `.timeline { display: grid }` are author rules, and any author `display`
+   beats the UA stylesheet's `[hidden] { display: none }` regardless of
+   specificity — so the collapsed subtab bar and both timeline footers were
+   still reserving ~200px of vertical space on screens that hide them. On a
+   projector that is the difference between a map you can read from the back
+   of the room and one you cannot. */
+[hidden] { display: none !important; }
+
+/* --- the demonstration scrubber ------------------------------------------ */
+
+/* Taller than the flood slider because it carries event labels above the
+   track. The labels are what make it a story rather than a ruler. */
+.story-bar { padding-top: 30px; }
+
+.story-track { position: relative; }
+
+/* Markers sit above the track, absolutely positioned by their hour so a label
+   always points at the moment it names. */
+.story-marks { position: absolute; left: 0; right: 0; top: -24px; height: 24px; }
+.story-mark {
+  position: absolute; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--text-3); white-space: nowrap;
+}
+.story-mark-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--surface-3); border: 1px solid var(--line);
+  transition: background var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.story-mark-label {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.story-mark:hover { color: var(--text); }
+
+/* A passed marker fills in; the current one is called out. Together they read
+   as progress through the event rather than six equal buttons. */
+.story-mark.passed[data-tone="watch"]  .story-mark-dot { background: var(--watch);  border-color: var(--watch); }
+.story-mark.passed[data-tone="alert"]  .story-mark-dot { background: var(--alert);  border-color: var(--alert); }
+.story-mark.passed[data-tone="severe"] .story-mark-dot { background: var(--severe); border-color: var(--severe); }
+.story-mark[aria-current="true"] { color: var(--text); }
+.story-mark[aria-current="true"] .story-mark-dot { transform: scale(1.6); }
+.story-mark[data-tone="severe"][aria-current="true"] { color: var(--severe); }
+
+/* --- story sidebar ------------------------------------------------------- */
+
+.story-phase-tag {
+  display: inline-block; margin-bottom: 6px;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em;
+  text-transform: uppercase; padding: 2px 6px; border-radius: 2px;
+  background: var(--surface-3); color: var(--text-3);
+}
+.story-phase-tag[data-tone="watch"]  { background: var(--watch-bg);  color: var(--watch); }
+.story-phase-tag[data-tone="alert"]  { background: var(--alert-bg);  color: var(--alert); }
+.story-phase-tag[data-tone="severe"] { background: var(--severe-bg); color: var(--severe); }
+
+/* One metric per row, the number carrying the weight. These are the readings a
+   presenter points at while saying "this is how it knew". */
+.story-metric {
+  border-top: 1px solid var(--line-soft);
+  padding: var(--s3) 0 var(--s2);
+}
+.story-metric:first-of-type { border-top: 0; }
+.story-metric-k {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.story-metric-v {
+  font-family: var(--font-cond); font-weight: 700; font-size: 26px;
+  line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.story-metric-v small { font-size: 12px; font-weight: 500; color: var(--text-3); }
+.story-metric-n { font-size: var(--t-xs); color: var(--text-2); margin-top: 2px; }
+.story-metric[data-tone="severe"] .story-metric-v { color: var(--severe); }
