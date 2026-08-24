@@ -277,7 +277,8 @@ export function renderRedZoneStats(el, summary) {
     </div>
     <div class="stat">
       <div class="stat-k">People in red zone</div>
-      <div class="stat-v" data-tone="alert">${fmt.compact(rel.population_in_red_zone)}</div>
+      <div class="stat-v" data-tone="alert">${fmt.compact(
+        rz.population_in_red_zone ?? rel.population_in_red_zone)}</div>
     </div>
     <div class="stat">
       <div class="stat-k">Immediate relocation</div>

@@ -527,7 +527,7 @@ async function loadStory() {
     el.badgeName.textContent = "Wayanad, Kerala";
     el.badgeSub.textContent =
       `${fmt.num(rz.red_zones.red_zone_area_km2, 0)} KM² RED ZONE · ` +
-      `${fmt.compact(rz.relocation.population_in_red_zone)} INSIDE IT · ` +
+      `${fmt.compact(rz.red_zones.population_in_red_zone)} ON IT · ` +
       `30 JULY 2024`;
 
     P.renderRedZoneStats(el.stats, rz);
