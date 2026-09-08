@@ -1,27 +1,64 @@
 """DRISHTI application entry point.
 
-Serves the JSON API, the raster layers and the static front end from a single
-process, so the whole system starts with one command and no build step. That is
-a deployment decision as much as a convenience: the target is a district
-emergency operations centre, which may be a laptop on a generator with no
-internet and no package manager.
+Serves the JSON API, the raster layers, and the static front end from a single
+process, so the whole system starts with one command and no build step.
 """
 
 from __future__ import annotations
 
 import os
+import threading
+from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api.routes import router
+# Safe import whether invoked as 'backend.app.main' or 'app.main'
+try:
+    from .api.routes import router
+except (ImportError, ValueError):
+    from api.routes import router
 
-# A frozen desktop build unpacks its data elsewhere, so the location is taken
-# from the environment when the packager has set it.
-FRONTEND = os.environ.get("DRISHTI_FRONTEND") or os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "frontend"))
+
+# Resolve absolute path to the repository root and frontend folder
+CURRENT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = CURRENT_DIR.parent.parent
+FRONTEND_ENV = os.environ.get("DRISHTI_FRONTEND")
+FRONTEND = Path(FRONTEND_ENV).resolve() if FRONTEND_ENV else (REPO_ROOT / "frontend")
+
+
+def _run_national_warmup() -> None:
+    try:
+        try:
+            from .core import national
+        except (ImportError, ValueError):
+            from core import national
+        national.get(0.75, True)
+    except Exception:
+        pass
+
+
+def _run_watch_warmup() -> None:
+    try:
+        try:
+            from .core import watch
+        except (ImportError, ValueError):
+            from core import watch
+        watch.get(with_river=True)
+    except Exception:
+        pass
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Warm the live screens in background threads upon startup."""
+    threading.Thread(target=_run_national_warmup, daemon=True).start()
+    threading.Thread(target=_run_watch_warmup, daemon=True).start()
+    yield
+
 
 app = FastAPI(
     title="DRISHTI",
@@ -31,33 +68,26 @@ app = FastAPI(
         "Flood intelligence for a district emergency operations centre: "
         "inundation extent and depth, ranked worst-affected zones, and an "
         "NDMA-SOP-derived response plan.\n\n"
-        "**Data provenance is reported on every response.** In demo mode the "
-        "input rasters are modelled rather than observed; the algorithms are "
-        "the published methods listed at `/api/methods` in either mode."
+        "**Data provenance is reported on every response.**"
     ),
+    lifespan=lifespan,
 )
 
-# Wide open by design: this is a read-only public-good API with no credentials
-# and no mutating endpoints.
+# Open CORS for API clients
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"],
+    allow_origins=["*"],
+    allow_methods=["GET"],
+    allow_headers=["*"],
 )
 
+# Attach backend API routes first
 app.include_router(router)
 
 
 @app.middleware("http")
 async def _revalidate_assets(request, call_next):
-    """Make the browser revalidate front-end assets instead of trusting memory.
-
-    Starlette already sends ETags, but a browser is free to serve a module from
-    its in-memory cache without asking. That is how a rebuilt file silently does
-    not take effect — and finding that out during a live demonstration, with a
-    half-old half-new interface on screen, is not a debugging session anyone
-    wants. ``no-cache`` still permits a 304, so this costs a conditional request
-    and nothing more.
-    """
+    """Ensure front-end assets revalidate rather than stale in browser memory."""
     response = await call_next(request)
     path = request.url.path
     if path.endswith((".js", ".css", ".html")) or path == "/":
@@ -65,48 +95,18 @@ async def _revalidate_assets(request, call_next):
     return response
 
 
-@app.on_event("startup")
-def _prewarm() -> None:
-    """Warm the live screens in the background.
-
-    A live national sweep is three batched HTTP requests and takes the better
-    part of a minute. Doing it lazily on the first page load means the opening
-    screen of a demonstration is a spinner, so it is started at boot and served
-    from cache thereafter. Failure is silent and harmless: the screen falls back
-    to modelled scoring and says so.
-    """
-    import threading
-
-    def run_national() -> None:
-        try:
-            from .core import national
-            national.get(0.75, True)
-        except Exception:
-            pass
-
-    def run_watch() -> None:
-        """Warm the live board, which is now the screen the app opens on.
-
-        It is the most expensive thing here - twenty-two coordinates of weather,
-        the district assessments behind the exposure figures, and a hydrological
-        simulation for anything that fires - and it is the first thing anybody
-        sees. Left lazy, the opening screen of a demonstration is a spinner for
-        several minutes. Replay boards are read from disk and need no warming.
-        """
-        try:
-            from .core import watch
-            watch.get(with_river=True)
-        except Exception:
-            pass
-
-    threading.Thread(target=run_national, daemon=True).start()
-    threading.Thread(target=run_watch, daemon=True).start()
-
-
+# Root route fallback
 @app.get("/", include_in_schema=False)
-def index() -> FileResponse:
-    return FileResponse(os.path.join(FRONTEND, "index.html"))
+def index():
+    index_file = FRONTEND / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file))
+    return HTMLResponse(
+        "<h2>DRISHTI Backend Active</h2><p>Frontend assets are compiling or missing. Visit <a href='/docs'>/docs</a> for the API.</p>",
+        status_code=200,
+    )
 
 
-if os.path.isdir(FRONTEND):
-    app.mount("/", StaticFiles(directory=FRONTEND, html=True), name="frontend")
+# Mount static assets if the folder exists
+if FRONTEND.is_dir():
+    app.mount("/", StaticFiles(directory=str(FRONTEND), html=True), name="frontend")
